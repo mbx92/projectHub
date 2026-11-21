@@ -1,6 +1,6 @@
 <template>
-  <div class="flex flex-wrap min-h-screen bg-white">
-    <section class="flex-[1_1_420px] bg-navy text-line p-8 sm:p-12 flex flex-col justify-between gap-10">
+  <div class="flex min-h-screen bg-white">
+    <section class="hidden lg:flex flex-[1_1_420px] bg-navy text-line p-12 flex-col justify-between gap-10">
       <div class="flex items-center gap-3">
         <img src="/logo-mark.svg" alt="" class="w-10 h-10 rounded-[10px]">
         <span class="text-white font-bold text-base">OCN Project Hub</span>

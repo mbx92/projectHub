@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bug Tracker — OCN Project Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#101828;background:#F5F6F8}
+a{color:#0B6E63}a:hover{color:#08544B}
+/* responsive:v3 */
+.tb-menu{display:none}
+.nav-backdrop{display:none}
+@media (min-width:1024px) and (max-width:1279px){
+section[aria-label^="Ringkasan"],section[aria-label="Angka utama"]{grid-template-columns:repeat(auto-fit,minmax(190px,1fr)) !important}
+section[aria-label^="Ringkasan"] span[style*="font-size: 2"],section[aria-label="Angka utama"] span[style*="font-size: 2"]{font-size:20px !important}
+}
+@media (max-width:1023px){
+.shell{flex-wrap:nowrap !important}
+.side{flex:0 0 76px !important;width:76px;padding:20px 12px !important;align-items:center}
+.brand-text,.nav-label{display:none !important}
+.nav-link{justify-content:center;padding:0 !important;width:48px}
+.content{padding:24px !important}
+.topbar{padding:10px 24px !important;flex-wrap:nowrap !important}
+.tb-search{flex:1 1 auto !important;min-width:0 !important}
+.tb-kbd,.tb-user-text{display:none !important}
+section[aria-label^="Ringkasan"],section[aria-label="Angka utama"]{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+[role="tablist"]{flex-wrap:nowrap !important;overflow-x:auto;scrollbar-width:none}
+[role="tablist"]>*{flex:none}
+}
+@media (max-width:767px){
+.shell{display:block !important}
+.side{position:fixed !important;top:0;bottom:0;left:0;width:280px !important;max-width:85vw !important;z-index:60;transform:translateX(-105%);transition:transform .2s ease;overflow-y:auto;align-items:stretch;padding:24px 16px !important;box-sizing:border-box}
+.side.open{transform:none;box-shadow:0 0 40px rgba(15,27,45,.35)}
+.side .brand-text{display:flex !important}
+.side .nav-label{display:inline !important}
+.side .nav-link{justify-content:flex-start;padding:0 12px !important;width:auto}
+.nav-backdrop{display:block}
+.tb-menu{display:flex}
+.topbar{padding:8px 12px !important;gap:8px !important;flex-wrap:nowrap !important;position:sticky;top:0;z-index:30}
+.tb-search{flex:1 1 auto !important;min-width:0 !important}
+.tb-help,.tb-sep,.tb-create{display:none !important}
+.content{padding:16px !important}
+h1{font-size:22px !important}
+section[aria-label^="Ringkasan"],section[aria-label="Angka utama"],section[aria-label^="Statistik"]{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important}
+section[aria-label^="Ringkasan"]>div,section[aria-label="Angka utama"]>div,section[aria-label^="Statistik"]>div{padding:14px !important;min-width:0}
+section[aria-label^="Ringkasan"] span[style*="font-size: 2"],section[aria-label="Angka utama"] span[style*="font-size: 2"],section[aria-label^="Statistik"] span[style*="font-size: 2"]{font-size:18px !important}
+th,td{padding:10px 12px !important}
+.item-row{grid-template-columns:64px minmax(0,1fr) 40px !important}
+.item-row>:first-child{grid-column:1/-1}
+.invoice-paper{padding:20px !important}
+.subnav{flex:1 1 100% !important;flex-direction:row !important;overflow-x:auto}
+.subnav button{white-space:nowrap;width:auto !important}
+.login-hero{padding:28px 20px !important;gap:20px !important}
+.login-hero ul{display:none !important}
+.login-hero h1{font-size:24px !important}
+}
+</style>
+<script src="assets/vue.global.prod.js"></script>
+<script src="assets/dc-runtime.js"></script>
+<script src="assets/components.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<script>
+DC.mount('#app', (function () {
+
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sev: 'Semua' }; }
+  renderVals() {
+    var self = this;
+    var active = 'Bugs.html';
+    var __dc = this;
+    var nav = [
+      { label: 'Dashboard Investor', href: 'Main.html', icon: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z' },
+      { label: 'Proyek', href: 'Projects.html', icon: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+      { label: 'Pembayaran', href: 'Payments.html', icon: 'M3 7h18v12H3zM3 7l2-3h12l2 3M16 13h2' },
+      { label: 'Bug Tracker', href: 'Bugs.html', icon: 'M8 9h8v6a4 4 0 0 1-8 0zM12 9V6M9 5l1.5 2M15 5l-1.5 2M4 12h4M16 12h4M5 18l3-2M19 18l-3-2' },
+      { label: 'Investor & Modal', href: 'Investors.html', icon: 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM22 19v-1a4 4 0 0 0-3-3.9M16 4.1a3 3 0 0 1 0 5.8' },
+      { label: 'Laporan', href: 'Reports.html', icon: 'M6 3h9l4 4v14H6zM9 13h6M9 17h6M9 9h3' },
+      { label: 'Pengaturan', href: 'Settings.html', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12h2M3 12h2M12 3v2M12 19v2M17 7l1.5-1.5M5.5 18.5L7 17M17 17l1.5 1.5M5.5 5.5L7 7' }
+    ].map(function (n) { return Object.assign({}, n, { active: n.href === active, idle: n.href !== active }); });
+
+    var sevStyle = {
+      'Kritis': { fg: '#B42318', bg: '#FEE4E2', rank: 0 },
+      'Tinggi': { fg: '#B54708', bg: '#FEF0C7', rank: 1 },
+      'Sedang': { fg: '#175CD3', bg: '#E8F0FE', rank: 2 },
+      'Rendah': { fg: '#344054', bg: '#F2F4F7', rank: 3 }
+    };
+    var people = {
+      PA: { ini: 'PA', who: 'Pande', avatar: '#0B6E63' },
+      AG: { ini: 'AG', who: 'Angga', avatar: '#1849A9' },
+      FR: { ini: 'FR', who: 'Freelancer', avatar: '#B54708' },
+      NA: { ini: '—', who: 'Belum ditugaskan', avatar: '#98A2B3' }
+    };
+    var bugs = [
+      { id: 'BUG-041', title: 'Saldo jurnal umum tidak balance setelah retur penjualan', module: 'Akunting', sev: 'Kritis', col: 'Open', who: 'NA', date: '19 Nov', reporter: 'Klien' },
+      { id: 'BUG-043', title: 'Laporan pajak PT komersial tidak memuat transaksi akhir bulan', module: 'Pajak', sev: 'Tinggi', col: 'Open', who: 'PA', date: '20 Nov', reporter: 'Klien' },
+      { id: 'BUG-044', title: 'Stok minimarket minus saat dua kasir transaksi bersamaan', module: 'Minimarket', sev: 'Tinggi', col: 'Open', who: 'AG', date: '18 Nov', reporter: 'QA internal' },
+      { id: 'BUG-045', title: 'Tombol simpan di form pegawai tidak merespons di Safari', module: 'Kepegawaian', sev: 'Sedang', col: 'Open', who: 'FR', date: '17 Nov', reporter: 'QA internal' },
+      { id: 'BUG-046', title: 'Salah ketik label di halaman pinjaman pegawai', module: 'Pinjaman', sev: 'Rendah', col: 'Open', who: 'NA', date: '16 Nov', reporter: 'Klien' },
+      { id: 'BUG-038', title: 'Sinkronisasi offline Flutter menggandakan transaksi pasar', module: 'Mobile', sev: 'Kritis', col: 'Dikerjakan', who: 'AG', date: '14 Nov', reporter: 'Klien' },
+      { id: 'BUG-039', title: 'Ekspor PDF neraca terpotong di halaman kedua', module: 'Akunting', sev: 'Sedang', col: 'Dikerjakan', who: 'PA', date: '13 Nov', reporter: 'QA internal' },
+      { id: 'BUG-040', title: 'Filter tanggal playground tidak mengikuti zona waktu WITA', module: 'Playground', sev: 'Sedang', col: 'Dikerjakan', who: 'FR', date: '12 Nov', reporter: 'QA internal' },
+      { id: 'BUG-035', title: 'Cicilan pinjaman pegawai tidak terpotong otomatis di payroll', module: 'Pinjaman', sev: 'Tinggi', col: 'Review', who: 'PA', date: '10 Nov', reporter: 'Klien' },
+      { id: 'BUG-036', title: 'Login gagal setelah pengguna mengganti password', module: 'Autentikasi', sev: 'Sedang', col: 'Review', who: 'AG', date: '9 Nov', reporter: 'Klien' },
+      { id: 'BUG-030', title: 'Dashboard memuat lebih dari 5 detik', module: 'Performa', sev: 'Sedang', col: 'Selesai', who: 'PA', date: '4 Nov', reporter: 'QA internal' },
+      { id: 'BUG-031', title: 'Struk minimarket tidak mencetak logo BUMDes', module: 'Minimarket', sev: 'Rendah', col: 'Selesai', who: 'FR', date: '2 Nov', reporter: 'Klien' }
+    ].map(function (b) { return Object.assign({}, b, sevStyle[b.sev], people[b.who]); });
+
+    var sev = this.state.sev;
+    var shown = bugs.filter(function (b) { return sev === 'Semua' || b.sev === sev; })
+      .sort(function (a, b) { return a.rank - b.rank; });
+
+    var chips = ['Semua', 'Kritis', 'Tinggi', 'Sedang', 'Rendah'].map(function (label) {
+      var on = label === sev;
+      var count = label === 'Semua' ? bugs.length : bugs.filter(function (b) { return b.sev === label; }).length;
+      return { label: label, count: count, on: on, off: !on, pick: function () { self.setState({ sev: label }); } };
+    });
+
+    var colDefs = [
+      { name: 'Open', dot: '#B42318' },
+      { name: 'Dikerjakan', dot: '#175CD3' },
+      { name: 'Review', dot: '#B54708' },
+      { name: 'Selesai', dot: '#067647' }
+    ];
+    var columns = colDefs.map(function (c) {
+      var cards = shown.filter(function (b) { return b.col === c.name; });
+      return Object.assign({}, c, { cards: cards, count: cards.length, empty: cards.length === 0 });
+    });
+
+    var countCol = function (name) { return bugs.filter(function (b) { return b.col === name; }).length; };
+    var critical = bugs.filter(function (b) { return b.sev === 'Kritis' && b.col !== 'Selesai'; }).length;
+
+    return {
+      nav: nav,
+      navOpen: !!(__dc.state && __dc.state.navOpen),
+      navClass: (__dc.state && __dc.state.navOpen) ? 'side open' : 'side',
+      toggleNav: function () { __dc.setState({ navOpen: !(__dc.state && __dc.state.navOpen) }); },
+      chips: chips,
+      columns: columns,
+      stats: [
+        { label: 'Open', value: countCol('Open'), color: '#101828' },
+        { label: 'Dikerjakan', value: countCol('Dikerjakan'), color: '#101828' },
+        { label: 'Menunggu review', value: countCol('Review'), color: '#101828' },
+        { label: 'Kritis belum selesai', value: critical, color: '#B42318' },
+        { label: 'Rata-rata waktu selesai', value: '3,2 hari', color: '#101828' }
+      ]
+    };
+  }
+}
+
+return Component;
+})(), "<div class=\"shell\" style=\"display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F6F8\">\n  <aside :class=\"v.navClass\" aria-label=\"Navigasi\" style=\"flex: 1 1 232px; max-width: 100%; background: #0F1B2D; color: #D0D5DD; padding: 24px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 28px\">\n    <div style=\"display: flex; align-items: center; gap: 10px; padding: 0 8px\">\n      <div style=\"width: 36px; height: 36px; border-radius: 9px; background: #0B6E63; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; letter-spacing: 0.5px\">OCN<\/div>\n      <div class=\"brand-text\" style=\"display: flex; flex-direction: column; gap: 2px\">\n        <span style=\"color: #FFFFFF; font-weight: 700; font-size: 15px\">OCN Project Hub<\/span>\n        <span style=\"font-size: 12px; color: #98A2B3\">OCN Development<\/span>\n      <\/div>\n    <\/div>\n    <nav aria-label=\"Menu utama\" style=\"display: flex; flex-direction: column; gap: 4px\">\n      <template v-for=\"(n, $index) in v.nav\">\n        <template v-if=\"n.active\">\n          <a :href=\"n.href\" class=\"nav-link\" :aria-label=\"n.label\" :title=\"n.label\" aria-current=\"page\" style=\"display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 8px; background: #1D2D46; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 600\">\n            <svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#5FD3C1\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path :d=\"n.icon\"><\/path><\/svg>\n            <span class=\"nav-label\">{{ n.label }}<\/span>\n          <\/a>\n        <\/template>\n        <template v-if=\"n.idle\">\n          <a :href=\"n.href\" class=\"nav-link\" :aria-label=\"n.label\" :title=\"n.label\" style=\"display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #D0D5DD; text-decoration: none; font-size: 14px; font-weight: 500\">\n            <svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path :d=\"n.icon\"><\/path><\/svg>\n            <span class=\"nav-label\">{{ n.label }}<\/span>\n          <\/a>\n        <\/template>\n      <\/template>\n    <\/nav>\n  <\/aside>\n  <template v-if=\"v.navOpen\"><button type=\"button\" class=\"nav-backdrop\" tabindex=\"-1\" aria-label=\"Tutup menu\" @click=\"v.toggleNav\" style=\"position: fixed; inset: 0; z-index: 55; border: none; background: rgba(15,27,45,0.5)\"><\/button><\/template>\n\n  <main class=\"main\" style=\"flex: 999 1 560px; min-width: 0; box-sizing: border-box; display: flex; flex-direction: column\">\n    <div class=\"topbar\" style=\"display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; min-height: 68px; padding: 10px 32px; box-sizing: border-box; background: #FFFFFF; border-bottom: 1px solid #E4E7EC\">\n      <button type=\"button\" class=\"tb-menu\" aria-label=\"Buka menu\" :aria-expanded=\"v.navOpen\" @click=\"v.toggleNav\" style=\"width: 44px; height: 44px; border: 1px solid #E4E7EC; border-radius: 8px; background: #FFFFFF; cursor: pointer; align-items: center; justify-content: center; flex: none\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#344054\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M4 7h16M4 12h16M4 17h16\"><\/path><\/svg><\/button>\n      <label class=\"tb-search\" style=\"display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid #D0D5DD; border-radius: 8px; background: #F9FAFB; flex: 0 1 440px; min-width: 200px; box-sizing: border-box\">\n        <svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#475467\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"><\/circle><path d=\"M20 20l-4-4\"><\/path><\/svg>\n        <span style=\"position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)\">Cari di OCN Project Hub<\/span>\n        <input type=\"search\" placeholder=\"Cari proyek, invoice, atau bug…\" style=\"border: none; outline: none; font: inherit; font-size: 14px; width: 100%; background: transparent; color: #101828\">\n        <kbd class=\"tb-kbd\" style=\"font: inherit; font-size: 11px; color: #475467; border: 1px solid #D0D5DD; border-radius: 4px; padding: 1px 6px; background: #FFFFFF; white-space: nowrap\">Ctrl K<\/kbd>\n      <\/label>\n      <div style=\"display: flex; align-items: center; gap: 8px\">\n        <button type=\"button\" class=\"tb-create\" style=\"min-height: 44px; padding: 0 14px; border: none; border-radius: 8px; background: #0F1B2D; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer\">+ Buat<\/button>\n        <button type=\"button\" aria-label=\"Notifikasi, 3 baru\" style=\"position: relative; width: 44px; height: 44px; border: 1px solid #E4E7EC; border-radius: 8px; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center\">\n          <svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#344054\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0\"><\/path><\/svg>\n          <span aria-hidden=\"true\" style=\"position: absolute; top: 5px; right: 5px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 999px; background: #D92D20; color: #FFFFFF; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center\">3<\/span>\n        <\/button>\n        <button type=\"button\" class=\"tb-help\" aria-label=\"Bantuan\" style=\"width: 44px; height: 44px; border: 1px solid #E4E7EC; border-radius: 8px; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center\">\n          <svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#344054\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"><\/circle><path d=\"M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-0.6 0.3-1 0.9-1 1.6V14M12 17h0.01\"><\/path><\/svg>\n        <\/button>\n        <span class=\"tb-sep\" aria-hidden=\"true\" style=\"width: 1px; height: 28px; background: #E4E7EC; margin: 0 4px\"><\/span>\n        <button type=\"button\" aria-label=\"Menu akun Pande\" style=\"display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px 0 4px; border: none; border-radius: 8px; background: transparent; cursor: pointer; font: inherit\">\n          <span style=\"width: 36px; height: 36px; border-radius: 999px; background: #0B6E63; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700\">PA<\/span>\n          <span class=\"tb-user-text\" style=\"display: flex; flex-direction: column; align-items: flex-start; gap: 1px\">\n            <span style=\"font-size: 14px; font-weight: 600; color: #101828\">Pande<\/span>\n            <span style=\"font-size: 12px; color: #475467\">Admin · Pendiri<\/span>\n          <\/span>\n          <svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#475467\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 9l6 6 6-6\"><\/path><\/svg>\n        <\/button>\n      <\/div>\n    <\/div>\n    <div class=\"content\" style=\"padding: 28px 32px 32px; box-sizing: border-box\">\n    <div style=\"max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px\">\n\n      <header style=\"display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px\">\n        <div style=\"display: flex; flex-direction: column; gap: 10px\">\n          <h1 style=\"margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.4px\">Bug Tracker<\/h1>\n          <div style=\"width: 320px\"><ui-search-select label=\"Proyek\" search-placeholder=\"Cari proyek…\" /><\/div>\n        <\/div>\n        <div style=\"display: flex; flex-wrap: wrap; gap: 12px\">\n          <a href=\"ProjectDetail.html\" style=\"min-height: 44px; padding: 0 16px; border: 1px solid #D0D5DD; border-radius: 8px; background: #FFFFFF; color: #344054; font-size: 14px; font-weight: 600; text-decoration: none; display: flex; align-items: center\">Buka detail proyek<\/a>\n          <button type=\"button\" style=\"min-height: 44px; padding: 0 18px; border: none; border-radius: 8px; background: #0B6E63; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer\">+ Laporkan Bug<\/button>\n        <\/div>\n      <\/header>\n\n      <section aria-label=\"Statistik bug\" style=\"display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px\">\n        <template v-for=\"(s, $index) in v.stats\">\n          <div style=\"background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px\">\n            <span style=\"font-size: 13px; color: #475467; font-weight: 500\">{{ s.label }}<\/span>\n            <span :style=\"'font-size: 24px; font-weight: 700; color: ' + (s.color)\">{{ s.value }}<\/span>\n          <\/div>\n        <\/template>\n      <\/section>\n\n      <div style=\"display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px\">\n        <div role=\"group\" aria-label=\"Filter tingkat keparahan\" style=\"display: flex; flex-wrap: wrap; gap: 8px\">\n          <template v-for=\"(c, $index) in v.chips\">\n            <template v-if=\"c.on\">\n              <button type=\"button\" aria-pressed=\"true\" @click=\"c.pick\" style=\"min-height: 40px; padding: 0 14px; border: 1px solid #0F1B2D; border-radius: 999px; background: #0F1B2D; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer\">{{ c.label }} · {{ c.count }}<\/button>\n            <\/template>\n            <template v-if=\"c.off\">\n              <button type=\"button\" aria-pressed=\"false\" @click=\"c.pick\" style=\"min-height: 40px; padding: 0 14px; border: 1px solid #D0D5DD; border-radius: 999px; background: #FFFFFF; color: #344054; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer\">{{ c.label }} · {{ c.count }}<\/button>\n            <\/template>\n          <\/template>\n        <\/div>\n        <span style=\"font-size: 13px; color: #475467\">Diurutkan: keparahan, lalu terbaru<\/span>\n      <\/div>\n\n      <div style=\"overflow-x: auto; padding-bottom: 4px\">\n        <div style=\"display: grid; grid-template-columns: repeat(4, minmax(250px, 1fr)); gap: 16px; align-items: start\">\n          <template v-for=\"(col, $index) in v.columns\">\n            <section :aria-label=\"col.name\" style=\"background: #EEF0F3; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px\">\n              <div style=\"display: flex; justify-content: space-between; align-items: center; padding: 4px 4px 2px\">\n                <h2 style=\"margin: 0; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px\"><span :style=\"'width: 8px; height: 8px; border-radius: 999px; background: ' + (col.dot)\"><\/span>{{ col.name }}<\/h2>\n                <span style=\"font-size: 12px; font-weight: 600; color: #344054; background: #FFFFFF; padding: 2px 8px; border-radius: 999px\">{{ col.count }}<\/span>\n              <\/div>\n              <template v-for=\"(b, $index) in col.cards\">\n                <article style=\"background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px\">\n                  <div style=\"display: flex; justify-content: space-between; align-items: center; gap: 8px\">\n                    <span style=\"font-size: 12px; font-weight: 600; color: #475467\">{{ b.id }}<\/span>\n                    <span :style=\"'font-size: 11px; font-weight: 700; color: ' + (b.fg) + '; background: ' + (b.bg) + '; padding: 2px 8px; border-radius: 999px'\">{{ b.sev }}<\/span>\n                  <\/div>\n                  <a href=\"BugDetail.html\" style=\"font-size: 14px; font-weight: 600; color: #101828; text-decoration: none; line-height: 1.4\">{{ b.title }}<\/a>\n                  <div style=\"display: flex; justify-content: space-between; align-items: center; gap: 8px\">\n                    <span style=\"font-size: 12px; color: #344054; background: #F2F4F7; padding: 2px 8px; border-radius: 6px\">{{ b.module }}<\/span>\n                    <div style=\"display: flex; align-items: center; gap: 8px\">\n                      <span style=\"font-size: 12px; color: #475467\">{{ b.date }}<\/span>\n                      <span :title=\"b.who\" :style=\"'width: 26px; height: 26px; border-radius: 999px; background: ' + (b.avatar) + '; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700'\">{{ b.ini }}<\/span>\n                    <\/div>\n                  <\/div>\n                  <span style=\"font-size: 12px; color: #475467\">Dilaporkan oleh {{ b.reporter }}<\/span>\n                <\/article>\n              <\/template>\n              <template v-if=\"col.empty\">\n                <div style=\"border: 1px dashed #D0D5DD; border-radius: 10px; padding: 18px; text-align: center; font-size: 13px; color: #475467\">Tidak ada bug di filter ini<\/div>\n              <\/template>\n            <\/section>\n          <\/template>\n        <\/div>\n      <\/div>\n\n    <\/div>\n    <\/div>\n  <\/main>\n<\/div>");
+</script>
+</body>
+</html>

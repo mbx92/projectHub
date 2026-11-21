@@ -32,6 +32,7 @@ const payTerm = ref<number | null>(null)
 const showExpense = ref(false)
 const editExpense = ref<any>(null)
 const showBug = ref(false)
+const showMember = ref(false)
 
 const lunasCount = computed(() => fin.value?.terms.filter(t => t.status === 'lunas').length ?? 0)
 const paidPct = computed(() => p.value.contractValue ? Math.round((fin.value?.paid ?? 0) / p.value.contractValue * 100) : 0)
@@ -365,7 +366,7 @@ const projects = computed(() => [{ id: p.value.id, name: p.value.name }])
         <section v-if="can.team" class="card overflow-hidden min-w-0">
           <div class="flex items-center justify-between gap-3 px-5 py-4">
             <h2 class="section-title">Anggota Tim</h2>
-            <NuxtLink v-if="can.edit" :to="`/projects/${id}/edit`" class="btn-secondary btn-sm">+ Tambah Anggota</NuxtLink>
+            <button v-if="can.edit" type="button" class="btn-secondary btn-sm" @click="showMember = true">+ Tambah Anggota</button>
           </div>
           <div class="table-wrap">
             <table class="data-table">
@@ -456,5 +457,6 @@ const projects = computed(() => [{ id: p.value.id, name: p.value.name }])
     <FinancePaymentModal :open="showPay" :project-id="id" :term-id="payTerm" @close="showPay = false" @saved="refresh" />
     <FinanceExpenseModal :open="showExpense" :project-id="id" :expense="editExpense" @close="showExpense = false" @saved="refresh" />
     <BugModal :open="showBug" :project-id="id" :projects="projects" @close="showBug = false" @saved="() => refresh()" />
+    <ProjectMemberModal :open="showMember" :project-id="id" :existing-ids="data.members.map(m => m.userId)" :can-money="can.editMoney" @close="showMember = false" @saved="() => refresh()" />
   </div>
 </template>

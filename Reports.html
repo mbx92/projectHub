@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laporan — OCN Project Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#101828;background:#F5F6F8}
+a{color:#0B6E63}a:hover{color:#08544B}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;font-weight:600;color:#475467;text-align:left;padding:12px 16px;background:#F9FAFB;border-bottom:1px solid #E4E7EC;white-space:nowrap}
+td{font-size:14px;padding:14px 16px;border-bottom:1px solid #EAECF0;vertical-align:middle;white-space:nowrap}
+/* responsive:v3 */
+.tb-menu{display:none}
+.nav-backdrop{display:none}
+@media (min-width:1024px) and (max-width:1279px){
+section[aria-label^="Ringkasan"],section[aria-label="Angka utama"]{grid-template-columns:repeat(auto-fit,minmax(190px,1fr)) !important}
+section[aria-label^="Ringkasan"] span[style*="font-size: 2"],section[aria-label="Angka utama"] span[style*="font-size: 2"]{font-size:20px !important}
+}
+@media (max-width:1023px){
+.shell{flex-wrap:nowrap !important}
+.side{flex:0 0 76px !important;width:76px;padding:20px 12px !important;align-items:center}
+.brand-text,.nav-label{display:none !important}
+.nav-link{justify-content:center;padding:0 !important;width:48px}
+.content{padding:24px !important}
+.topbar{padding:10px 24px !important;flex-wrap:nowrap !important}
+.tb-search{flex:1 1 auto !important;min-width:0 !important}
+.tb-kbd,.tb-user-text{display:none !important}
+section[aria-label^="Ringkasan"],section[aria-label="Angka utama"]{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+[role="tablist"]{flex-wrap:nowrap !important;overflow-x:auto;scrollbar-width:none}
+[role="tablist"]>*{flex:none}
+}
+@media (max-width:767px){
+.shell{display:block !important}
+.side{position:fixed !important;top:0;bottom:0;left:0;width:280px !important;max-width:85vw !important;z-index:60;transform:translateX(-105%);transition:transform .2s ease;overflow-y:auto;align-items:stretch;padding:24px 16px !important;box-sizing:border-box}
+.side.open{transform:none;box-shadow:0 0 40px rgba(15,27,45,.35)}
+.side .brand-text{display:flex !important}
+.side .nav-label{display:inline !important}
+.side .nav-link{justify-content:flex-start;padding:0 12px !important;width:auto}
+.nav-backdrop{display:block}
+.tb-menu{display:flex}
+.topbar{padding:8px 12px !important;gap:8px !important;flex-wrap:nowrap !important;position:sticky;top:0;z-index:30}
+.tb-search{flex:1 1 auto !important;min-width:0 !important}
+.tb-help,.tb-sep,.tb-create{display:none !important}
+.content{padding:16px !important}
+h1{font-size:22px !important}
+section[aria-label^="Ringkasan"],section[aria-label="Angka utama"],section[aria-label^="Statistik"]{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important}
+section[aria-label^="Ringkasan"]>div,section[aria-label="Angka utama"]>div,section[aria-label^="Statistik"]>div{padding:14px !important;min-width:0}
+section[aria-label^="Ringkasan"] span[style*="font-size: 2"],section[aria-label="Angka utama"] span[style*="font-size: 2"],section[aria-label^="Statistik"] span[style*="font-size: 2"]{font-size:18px !important}
+th,td{padding:10px 12px !important}
+.item-row{grid-template-columns:64px minmax(0,1fr) 40px !important}
+.item-row>:first-child{grid-column:1/-1}
+.invoice-paper{padding:20px !important}
+.subnav{flex:1 1 100% !important;flex-direction:row !important;overflow-x:auto}
+.subnav button{white-space:nowrap;width:auto !important}
+.login-hero{padding:28px 20px !important;gap:20px !important}
+.login-hero ul{display:none !important}
+.login-hero h1{font-size:24px !important}
+}
+</style>
+<script src="assets/vue.global.prod.js"></script>
+<script src="assets/dc-runtime.js"></script>
+<script src="assets/components.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<script>
+DC.mount('#app', (function () {
+
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = {}; }
+  renderVals() {
+    var self = this;
+    var active = 'Reports.html';
+    var __dc = this;
+    var nav = [
+      { label: 'Dashboard Investor', href: 'Main.html', icon: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z' },
+      { label: 'Proyek', href: 'Projects.html', icon: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+      { label: 'Pembayaran', href: 'Payments.html', icon: 'M3 7h18v12H3zM3 7l2-3h12l2 3M16 13h2' },
+      { label: 'Bug Tracker', href: 'Bugs.html', icon: 'M8 9h8v6a4 4 0 0 1-8 0zM12 9V6M9 5l1.5 2M15 5l-1.5 2M4 12h4M16 12h4M5 18l3-2M19 18l-3-2' },
+      { label: 'Investor & Modal', href: 'Investors.html', icon: 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM22 19v-1a4 4 0 0 0-3-3.9M16 4.1a3 3 0 0 1 0 5.8' },
+      { label: 'Laporan', href: 'Reports.html', icon: 'M6 3h9l4 4v14H6zM9 13h6M9 17h6M9 9h3' },
+      { label: 'Pengaturan', href: 'Settings.html', icon: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12h2M3 12h2M12 3v2M12 19v2M17 7l1.5-1.5M5.5 18.5L7 17M17 17l1.5 1.5M5.5 5.5L7 7' }
+    ].map(function (n) { return Object.assign({}, n, { active: n.href === active, idle: n.href !== active }); });
+    var done = { fg: '#067647', bg: '#DCFAE6' };
+    var wait = { fg: '#B54708', bg: '#FEF0C7' };
+    var run = { fg: '#175CD3', bg: '#E8F0FE' };
+    return {
+      nav: nav,
+      navOpen: !!(__dc.state && __dc.state.navOpen),
+      navClass: (__dc.state && __dc.state.navOpen) ? 'side open' : 'side',
+      toggleNav: function () { __dc.setState({ navOpen: !(__dc.state && __dc.state.navOpen) }); },
+      kpis: [
+        { label: 'Pendapatan diterima', value: 'Rp 79.150.000', sub: '7 proyek & layanan', color: '#101828' },
+        { label: 'Pengeluaran proyek', value: 'Rp 19.200.000', sub: 'Tidak termasuk aset', color: '#101828' },
+        { label: 'Laba bersih', value: 'Rp 59.950.000', sub: 'Margin 76%', color: '#067647' },
+        { label: 'Sudah dibagikan', value: 'Rp 10.500.000', sub: 'Dari 2 proyek selesai', color: '#0B6E63' }
+      ],
+      rows: [
+        Object.assign({ name: 'Sistem Informasi BUMDes', rev: 'Rp 35.000.000', exp: 'Rp 8.200.000', profit: 'Rp 26.800.000', margin: 77, status: 'Menunggu pelunasan' }, wait),
+        Object.assign({ name: 'Website Company Profile', rev: 'Rp 12.000.000', exp: 'Rp 4.800.000', profit: 'Rp 7.200.000', margin: 60, status: 'Sudah dibagi' }, done),
+        Object.assign({ name: 'LMS Sekolah', rev: 'Rp 10.000.000', exp: 'Rp 4.000.000', profit: 'Rp 6.000.000', margin: 60, status: 'Proyek berjalan' }, run),
+        Object.assign({ name: 'Sistem Klinik Pratama', rev: 'Rp 9.750.000', exp: 'Rp 0', profit: 'Rp 9.750.000', margin: 100, status: 'Proyek berjalan' }, run),
+        Object.assign({ name: 'POS Resto', rev: 'Rp 5.400.000', exp: 'Rp 0', profit: 'Rp 5.400.000', margin: 100, status: 'Proyek berjalan' }, run),
+        Object.assign({ name: 'Maintenance Server Klien', rev: 'Rp 4.000.000', exp: 'Rp 700.000', profit: 'Rp 3.300.000', margin: 83, status: 'Sudah dibagi' }, done),
+        Object.assign({ name: 'Aplikasi Absensi Desa', rev: 'Rp 3.000.000', exp: 'Rp 1.500.000', profit: 'Rp 1.500.000', margin: 50, status: 'Tertunda' }, wait)
+      ],
+      cats: [
+        { label: 'Tenaga kerja (freelancer)', amount: 'Rp 11.800.000', pct: 61, color: '#0B6E63' },
+        { label: 'Operasional & transport', amount: 'Rp 4.050.000', pct: 21, color: '#F79009' },
+        { label: 'Infrastruktur (server, domain)', amount: 'Rp 3.350.000', pct: 18, color: '#2E90FA' }
+      ],
+      docs: [
+        { name: 'Laporan Investor — November 2026', meta: 'PDF · ringkasan modal, arus kas, bagi hasil' },
+        { name: 'Laba Rugi per Proyek — 2026', meta: 'Excel · basis kas' },
+        { name: 'Rekap Piutang & Invoice', meta: 'PDF · per 21 Nov 2026' },
+        { name: 'Rekap Bug per Proyek', meta: 'PDF · status dan waktu penyelesaian' }
+      ]
+    };
+
+  }
+}
+
+return Component;
+})(), "<div class=\"shell\" style=\"display: flex; flex-wrap: wrap; min-height: 100vh; background: #F5F6F8\">\n  <aside :class=\"v.navClass\" aria-label=\"Navigasi\" style=\"flex: 1 1 232px; max-width: 100%; background: #0F1B2D; color: #D0D5DD; padding: 24px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 28px\">\n    <div style=\"display: flex; align-items: center; gap: 10px; padding: 0 8px\">\n      <div style=\"width: 36px; height: 36px; border-radius: 9px; background: #0B6E63; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; letter-spacing: 0.5px\">OCN<\/div>\n      <div class=\"brand-text\" style=\"display: flex; flex-direction: column; gap: 2px\">\n        <span style=\"color: #FFFFFF; font-weight: 700; font-size: 15px\">OCN Project Hub<\/span>\n        <span style=\"font-size: 12px; color: #98A2B3\">OCN Development<\/span>\n      <\/div>\n    <\/div>\n    <nav aria-label=\"Menu utama\" style=\"display: flex; flex-direction: column; gap: 4px\">\n      <template v-for=\"(n, $index) in v.nav\">\n        <template v-if=\"n.active\">\n          <a :href=\"n.href\" class=\"nav-link\" :aria-label=\"n.label\" :title=\"n.label\" aria-current=\"page\" style=\"display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 8px; background: #1D2D46; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 600\">\n            <svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#5FD3C1\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path :d=\"n.icon\"><\/path><\/svg>\n            <span class=\"nav-label\">{{ n.label }}<\/span>\n          <\/a>\n        <\/template>\n        <template v-if=\"n.idle\">\n          <a :href=\"n.href\" class=\"nav-link\" :aria-label=\"n.label\" :title=\"n.label\" style=\"display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 8px; color: #D0D5DD; text-decoration: none; font-size: 14px; font-weight: 500\">\n            <svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path :d=\"n.icon\"><\/path><\/svg>\n            <span class=\"nav-label\">{{ n.label }}<\/span>\n          <\/a>\n        <\/template>\n      <\/template>\n    <\/nav>\n  <\/aside>\n  <template v-if=\"v.navOpen\"><button type=\"button\" class=\"nav-backdrop\" tabindex=\"-1\" aria-label=\"Tutup menu\" @click=\"v.toggleNav\" style=\"position: fixed; inset: 0; z-index: 55; border: none; background: rgba(15,27,45,0.5)\"><\/button><\/template>\n\n  <main class=\"main\" style=\"flex: 999 1 560px; min-width: 0; box-sizing: border-box; display: flex; flex-direction: column\">\n    <div class=\"topbar\" style=\"display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; min-height: 68px; padding: 10px 32px; box-sizing: border-box; background: #FFFFFF; border-bottom: 1px solid #E4E7EC\">\n      <button type=\"button\" class=\"tb-menu\" aria-label=\"Buka menu\" :aria-expanded=\"v.navOpen\" @click=\"v.toggleNav\" style=\"width: 44px; height: 44px; border: 1px solid #E4E7EC; border-radius: 8px; background: #FFFFFF; cursor: pointer; align-items: center; justify-content: center; flex: none\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#344054\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M4 7h16M4 12h16M4 17h16\"><\/path><\/svg><\/button>\n      <label class=\"tb-search\" style=\"display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid #D0D5DD; border-radius: 8px; background: #F9FAFB; flex: 0 1 440px; min-width: 200px; box-sizing: border-box\">\n        <svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#475467\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"11\" cy=\"11\" r=\"7\"><\/circle><path d=\"M20 20l-4-4\"><\/path><\/svg>\n        <span style=\"position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)\">Cari di OCN Project Hub<\/span>\n        <input type=\"search\" placeholder=\"Cari proyek, invoice, atau bug…\" style=\"border: none; outline: none; font: inherit; font-size: 14px; width: 100%; background: transparent; color: #101828\">\n        <kbd class=\"tb-kbd\" style=\"font: inherit; font-size: 11px; color: #475467; border: 1px solid #D0D5DD; border-radius: 4px; padding: 1px 6px; background: #FFFFFF; white-space: nowrap\">Ctrl K<\/kbd>\n      <\/label>\n      <div style=\"display: flex; align-items: center; gap: 8px\">\n        <button type=\"button\" class=\"tb-create\" style=\"min-height: 44px; padding: 0 14px; border: none; border-radius: 8px; background: #0F1B2D; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer\">+ Buat<\/button>\n        <button type=\"button\" aria-label=\"Notifikasi, 3 baru\" style=\"position: relative; width: 44px; height: 44px; border: 1px solid #E4E7EC; border-radius: 8px; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center\">\n          <svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#344054\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0\"><\/path><\/svg>\n          <span aria-hidden=\"true\" style=\"position: absolute; top: 5px; right: 5px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 999px; background: #D92D20; color: #FFFFFF; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center\">3<\/span>\n        <\/button>\n        <button type=\"button\" class=\"tb-help\" aria-label=\"Bantuan\" style=\"width: 44px; height: 44px; border: 1px solid #E4E7EC; border-radius: 8px; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center\">\n          <svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#344054\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"><\/circle><path d=\"M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-0.6 0.3-1 0.9-1 1.6V14M12 17h0.01\"><\/path><\/svg>\n        <\/button>\n        <span class=\"tb-sep\" aria-hidden=\"true\" style=\"width: 1px; height: 28px; background: #E4E7EC; margin: 0 4px\"><\/span>\n        <button type=\"button\" aria-label=\"Menu akun Pande\" style=\"display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px 0 4px; border: none; border-radius: 8px; background: transparent; cursor: pointer; font: inherit\">\n          <span style=\"width: 36px; height: 36px; border-radius: 999px; background: #0B6E63; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700\">PA<\/span>\n          <span class=\"tb-user-text\" style=\"display: flex; flex-direction: column; align-items: flex-start; gap: 1px\">\n            <span style=\"font-size: 14px; font-weight: 600; color: #101828\">Pande<\/span>\n            <span style=\"font-size: 12px; color: #475467\">Admin · Pendiri<\/span>\n          <\/span>\n          <svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#475467\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 9l6 6 6-6\"><\/path><\/svg>\n        <\/button>\n      <\/div>\n    <\/div>\n    <div class=\"content\" style=\"padding: 28px 32px 32px; box-sizing: border-box\">\n    <div style=\"max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px\">\n      <header style=\"display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px\">\n        <div style=\"display: flex; flex-direction: column; gap: 6px\">\n          <h1 style=\"margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.4px\">Laporan<\/h1>\n          <p style=\"margin: 0; font-size: 14px; color: #475467\">Laba rugi per proyek, pengeluaran per kategori, dan laporan siap kirim ke investor.<\/p>\n        <\/div>\n        <div style=\"display: flex; flex-wrap: wrap; align-items: center; gap: 12px\">\n          <div style=\"width: 220px\"><ui-select label=\"Periode\" options=\"Tahun 2026|November 2026|Kuartal 4 2026\" value=\"Tahun 2026\" /><\/div>\n          <button type=\"button\" style=\"min-height: 44px; padding: 0 16px; border: 1px solid #D0D5DD; border-radius: 8px; background: #FFFFFF; color: #344054; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer\">Ekspor Excel<\/button>\n          <button type=\"button\" style=\"min-height: 44px; padding: 0 18px; border: none; border-radius: 8px; background: #0B6E63; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer\">Ekspor PDF<\/button>\n        <\/div>\n      <\/header>\n\n      <section aria-label=\"Ringkasan laba rugi\" style=\"display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px\">\n        <template v-for=\"(k, $index) in v.kpis\">\n          <div style=\"background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px\">\n            <span style=\"font-size: 13px; color: #475467; font-weight: 500\">{{ k.label }}<\/span>\n            <span :style=\"'font-size: 24px; font-weight: 700; color: ' + (k.color)\">{{ k.value }}<\/span>\n            <span style=\"font-size: 12px; color: #475467\">{{ k.sub }}<\/span>\n          <\/div>\n        <\/template>\n      <\/section>\n\n      <section style=\"background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; overflow: hidden\">\n        <div style=\"padding: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center\">\n          <h2 style=\"margin: 0; font-size: 16px; font-weight: 700\">Laba Rugi per Proyek<\/h2>\n          <span style=\"font-size: 13px; color: #475467\">Berdasarkan pembayaran yang sudah diterima (basis kas)<\/span>\n        <\/div>\n        <div style=\"overflow-x: auto\">\n          <table>\n            <thead><tr><th scope=\"col\">Proyek<\/th><th scope=\"col\">Pendapatan Diterima<\/th><th scope=\"col\">Pengeluaran<\/th><th scope=\"col\">Laba Bersih<\/th><th scope=\"col\">Margin<\/th><th scope=\"col\">Bagi Hasil<\/th><\/tr><\/thead>\n            <tbody>\n              <template v-for=\"(r, $index) in v.rows\">\n                <tr>\n                  <td style=\"font-weight: 600\">{{ r.name }}<\/td>\n                  <td>{{ r.rev }}<\/td>\n                  <td>{{ r.exp }}<\/td>\n                  <td style=\"font-weight: 700\">{{ r.profit }}<\/td>\n                  <td>\n                    <div style=\"display: flex; align-items: center; gap: 8px\">\n                      <div style=\"width: 64px; height: 6px; border-radius: 999px; background: #EAECF0; overflow: hidden\"><div :style=\"'width: ' + (r.margin) + '%; height: 100%; background: #0B6E63'\"><\/div><\/div>\n                      <span style=\"font-size: 13px; font-weight: 600\">{{ r.margin }}%<\/span>\n                    <\/div>\n                  <\/td>\n                  <td><span :style=\"'font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; color: ' + (r.fg) + '; background: ' + (r.bg)\">{{ r.status }}<\/span><\/td>\n                <\/tr>\n              <\/template>\n              <tr style=\"background: #F9FAFB\">\n                <td style=\"font-weight: 700\">Total<\/td>\n                <td style=\"font-weight: 700\">Rp 79.150.000<\/td>\n                <td style=\"font-weight: 700\">Rp 19.200.000<\/td>\n                <td style=\"font-weight: 700\">Rp 59.950.000<\/td>\n                <td style=\"font-weight: 700\">76%<\/td>\n                <td><\/td>\n              <\/tr>\n            <\/tbody>\n          <\/table>\n        <\/div>\n      <\/section>\n\n      <div style=\"display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start\">\n        <section style=\"flex: 1 1 400px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 16px\">\n          <h2 style=\"margin: 0; font-size: 16px; font-weight: 700\">Pengeluaran per Kategori<\/h2>\n          <template v-for=\"(c, $index) in v.cats\">\n            <div style=\"display: flex; flex-direction: column; gap: 6px\">\n              <div style=\"display: flex; justify-content: space-between; font-size: 14px\"><span>{{ c.label }}<\/span><span style=\"font-weight: 700\">{{ c.amount }}<\/span><\/div>\n              <div style=\"height: 10px; border-radius: 999px; background: #EAECF0; overflow: hidden\"><div :style=\"'width: ' + (c.pct) + '%; height: 100%; background: ' + (c.color)\"><\/div><\/div>\n            <\/div>\n          <\/template>\n          <p style=\"margin: 0; font-size: 12px; color: #475467\">Pembelian aset (tablet kasir Rp 3.500.000) dicatat sebagai aset OCN, tidak mengurangi laba proyek.<\/p>\n        <\/section>\n\n        <section style=\"flex: 1 1 400px; min-width: 0; background: #FFFFFF; border: 1px solid #E4E7EC; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 4px\">\n          <h2 style=\"margin: 0 0 8px; font-size: 16px; font-weight: 700\">Laporan Siap Unduh<\/h2>\n          <template v-for=\"(d, $index) in v.docs\">\n            <div style=\"display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #EAECF0\">\n              <div style=\"display: flex; align-items: center; gap: 12px\">\n                <span style=\"width: 40px; height: 40px; border-radius: 8px; background: #E6F4F1; display: flex; align-items: center; justify-content: center\">\n                  <svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#0B6E63\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 3h9l4 4v14H6zM9 13h6M9 17h6M9 9h3\"><\/path><\/svg>\n                <\/span>\n                <div style=\"display: flex; flex-direction: column; gap: 2px\">\n                  <span style=\"font-size: 14px; font-weight: 600\">{{ d.name }}<\/span>\n                  <span style=\"font-size: 12px; color: #475467\">{{ d.meta }}<\/span>\n                <\/div>\n              <\/div>\n              <a href=\"#\" style=\"font-size: 13px; font-weight: 600; text-decoration: none; min-height: 44px; display: flex; align-items: center\">Unduh<\/a>\n            <\/div>\n          <\/template>\n        <\/section>\n      <\/div>\n\n    <\/div>\n    <\/div>\n  <\/main>\n<\/div>");
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Masuk — OCN Project Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#101828;background:#F5F6F8}
+a{color:#0B6E63}a:hover{color:#08544B}
+/* responsive:v3 */
+.tb-menu{display:none}
+.nav-backdrop{display:none}
+@media (min-width:1024px) and (max-width:1279px){
+section[aria-label^="Ringkasan"],section[aria-label="Angka utama"]{grid-template-columns:repeat(auto-fit,minmax(190px,1fr)) !important}
+section[aria-label^="Ringkasan"] span[style*="font-size: 2"],section[aria-label="Angka utama"] span[style*="font-size: 2"]{font-size:20px !important}
+}
+@media (max-width:1023px){
+.shell{flex-wrap:nowrap !important}
+.side{flex:0 0 76px !important;width:76px;padding:20px 12px !important;align-items:center}
+.brand-text,.nav-label{display:none !important}
+.nav-link{justify-content:center;padding:0 !important;width:48px}
+.content{padding:24px !important}
+.topbar{padding:10px 24px !important;flex-wrap:nowrap !important}
+.tb-search{flex:1 1 auto !important;min-width:0 !important}
+.tb-kbd,.tb-user-text{display:none !important}
+section[aria-label^="Ringkasan"],section[aria-label="Angka utama"]{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+[role="tablist"]{flex-wrap:nowrap !important;overflow-x:auto;scrollbar-width:none}
+[role="tablist"]>*{flex:none}
+}
+@media (max-width:767px){
+.shell{display:block !important}
+.side{position:fixed !important;top:0;bottom:0;left:0;width:280px !important;max-width:85vw !important;z-index:60;transform:translateX(-105%);transition:transform .2s ease;overflow-y:auto;align-items:stretch;padding:24px 16px !important;box-sizing:border-box}
+.side.open{transform:none;box-shadow:0 0 40px rgba(15,27,45,.35)}
+.side .brand-text{display:flex !important}
+.side .nav-label{display:inline !important}
+.side .nav-link{justify-content:flex-start;padding:0 12px !important;width:auto}
+.nav-backdrop{display:block}
+.tb-menu{display:flex}
+.topbar{padding:8px 12px !important;gap:8px !important;flex-wrap:nowrap !important;position:sticky;top:0;z-index:30}
+.tb-search{flex:1 1 auto !important;min-width:0 !important}
+.tb-help,.tb-sep,.tb-create{display:none !important}
+.content{padding:16px !important}
+h1{font-size:22px !important}
+section[aria-label^="Ringkasan"],section[aria-label="Angka utama"],section[aria-label^="Statistik"]{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important}
+section[aria-label^="Ringkasan"]>div,section[aria-label="Angka utama"]>div,section[aria-label^="Statistik"]>div{padding:14px !important;min-width:0}
+section[aria-label^="Ringkasan"] span[style*="font-size: 2"],section[aria-label="Angka utama"] span[style*="font-size: 2"],section[aria-label^="Statistik"] span[style*="font-size: 2"]{font-size:18px !important}
+th,td{padding:10px 12px !important}
+.item-row{grid-template-columns:64px minmax(0,1fr) 40px !important}
+.item-row>:first-child{grid-column:1/-1}
+.invoice-paper{padding:20px !important}
+.subnav{flex:1 1 100% !important;flex-direction:row !important;overflow-x:auto}
+.subnav button{white-space:nowrap;width:auto !important}
+.login-hero{padding:28px 20px !important;gap:20px !important}
+.login-hero ul{display:none !important}
+.login-hero h1{font-size:24px !important}
+}
+</style>
+<script src="assets/vue.global.prod.js"></script>
+<script src="assets/dc-runtime.js"></script>
+<script src="assets/components.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<script>
+DC.mount('#app', (function () {
+
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+
+return Component;
+})(), "<div style=\"display: flex; flex-wrap: wrap; min-height: 100vh; background: #FFFFFF\">\n  <section class=\"login-hero\" style=\"flex: 1 1 420px; background: #0F1B2D; color: #D0D5DD; padding: 48px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 40px\">\n    <div style=\"display: flex; align-items: center; gap: 12px\">\n      <div style=\"width: 40px; height: 40px; border-radius: 10px; background: #0B6E63; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px\">OCN<\/div>\n      <span style=\"color: #FFFFFF; font-weight: 700; font-size: 17px\">OCN Project Hub<\/span>\n    <\/div>\n    <div style=\"display: flex; flex-direction: column; gap: 16px; max-width: 460px\">\n      <h1 style=\"margin: 0; color: #FFFFFF; font-size: 36px; line-height: 1.2; font-weight: 700; letter-spacing: -0.6px\">Proyek, pembayaran, dan bagi hasil dalam satu tempat.<\/h1>\n      <p style=\"margin: 0; font-size: 15px; line-height: 1.6; color: #D0D5DD\">Pengganti file Excel per proyek: tim melihat progres dan bug, investor melihat modal dan hasilnya secara transparan.<\/p>\n    <\/div>\n    <ul style=\"margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 14px\">\n      <li style=\"display: flex; align-items: center; gap: 10px\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#5FD3C1\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12l5 5L20 7\"><\/path><\/svg>Termin pembayaran klien dan pengingat otomatis<\/li>\n      <li style=\"display: flex; align-items: center; gap: 10px\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#5FD3C1\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12l5 5L20 7\"><\/path><\/svg>Skema bagi hasil per proyek<\/li>\n      <li style=\"display: flex; align-items: center; gap: 10px\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#5FD3C1\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12l5 5L20 7\"><\/path><\/svg>Bug tracker untuk tiap proyek<\/li>\n    <\/ul>\n  <\/section>\n\n  <section style=\"flex: 1 1 420px; padding: 48px 32px; box-sizing: border-box; display: flex; align-items: center; justify-content: center\">\n    <form style=\"width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 20px\">\n      <div style=\"display: flex; flex-direction: column; gap: 6px\">\n        <h2 style=\"margin: 0; font-size: 26px; font-weight: 700\">Masuk<\/h2>\n        <p style=\"margin: 0; font-size: 14px; color: #475467\">Gunakan akun yang dikirim lewat undangan. Anda akan diarahkan ke halaman sesuai peran akun.<\/p>\n      <\/div>\n      <label style=\"display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #344054\">Email\n        <input type=\"email\" placeholder=\"nama@email.com\" autocomplete=\"email\" style=\"min-height: 44px; padding: 0 12px; border: 1px solid #D0D5DD; border-radius: 8px; font: inherit; font-weight: 400; box-sizing: border-box\">\n      <\/label>\n      <label style=\"display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #344054\">Kata sandi\n        <input type=\"password\" placeholder=\"••••••••\" autocomplete=\"current-password\" style=\"min-height: 44px; padding: 0 12px; border: 1px solid #D0D5DD; border-radius: 8px; font: inherit; font-weight: 400; box-sizing: border-box\">\n      <\/label>\n      <div style=\"display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px\">\n        <label style=\"display: flex; align-items: center; gap: 8px; color: #344054; min-height: 44px\"><input type=\"checkbox\" style=\"width: 18px; height: 18px; accent-color: #0B6E63\">Ingat saya<\/label>\n        <a href=\"#\" style=\"font-weight: 600; text-decoration: none\">Lupa kata sandi?<\/a>\n      <\/div>\n      <a href=\"Main.html\" style=\"min-height: 48px; border-radius: 8px; background: #0B6E63; color: #FFFFFF; font-size: 15px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center\">Masuk<\/a>\n      <p style=\"margin: 0; font-size: 13px; color: #475467; text-align: center\">Belum punya akses? Hubungi admin OCN Development.<\/p>\n    <\/form>\n  <\/section>\n<\/div>");
+</script>
+</body>
+</html>

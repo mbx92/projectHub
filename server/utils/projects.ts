@@ -22,6 +22,8 @@ export const projectInputSchema = z.object({
     id: zId.optional(),
     name: z.string().trim().min(1, 'nama termin wajib diisi').max(120),
     percent: zPct,
+    /** Nominal eksplisit (mode input nominal); bila semua termin menyertakannya, totalnya harus = nilai kontrak dan dipakai apa adanya. */
+    amount: zMoney.optional(),
     conditions: zOptText(300),
     dueDate: zDate.nullish().transform(v => v ?? null),
   })).min(1, 'minimal satu termin'),
@@ -91,7 +93,11 @@ export async function saveProject(me: SessionUser, input: ProjectInput, projectI
 
     // ── Termin ──
     const existing = await tx.select().from(schema.terms).where(eq(schema.terms.projectId, id))
-    const amounts = termAmounts(input.contractValue, input.terms.map(t => t.percent))
+    const explicit = input.terms.every(t => t.amount !== undefined)
+    if (explicit && input.terms.reduce((a, t) => a + t.amount!, 0) !== input.contractValue) {
+      throw createError({ statusCode: 422, statusMessage: 'Total nominal termin harus sama dengan nilai kontrak.' })
+    }
+    const amounts = explicit ? input.terms.map(t => t.amount!) : termAmounts(input.contractValue, input.terms.map(t => t.percent))
     const keepIds = new Set(input.terms.map(t => t.id).filter(Boolean) as number[])
     for (const old of existing) {
       if (!keepIds.has(old.id)) {

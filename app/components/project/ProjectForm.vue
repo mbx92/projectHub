@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Form Tambah/Edit Proyek: info dasar, klien, nilai kontrak & termin, tim & skema, milestone. */
-interface TermRow { id?: number, name: string, percent: number, conditions: string | null, dueDate: string | null, status?: string }
+interface TermRow { id?: number, name: string, percent: number, conditions: string | null, dueDate: string | null, status?: string, nominal?: number }
 interface MemberRow { userId: number, roleInProject: string | null, payType: 'bagi_hasil' | 'tetap', fixedFee: number, shareWeight: number }
 interface MsRow { id?: number, name: string, targetDate: string | null, status: 'belum' | 'berjalan' | 'selesai' }
 
@@ -56,8 +56,32 @@ const addable = computed(() => staff.value.filter(u => !f.members.some(m => m.us
 
 const amounts = computed(() => termAmounts(f.contractValue, f.terms.map(t => Number(t.percent) || 0)))
 const pctSum = computed(() => percentTotal(f.terms.map(t => Number(t.percent) || 0)))
-const pctOk = computed(() => Math.abs(pctSum.value - 100) < 0.001)
 const billed = (t: TermRow) => !!t.status && t.status !== 'terjadwal'
+
+/** Cara mengisi termin: persen (nominal dihitung) atau nominal (persen dihitung dari nilai kontrak). */
+const termMode = ref<'persen' | 'nominal'>('persen')
+const round2 = (n: number) => Math.round(n * 100) / 100
+const nominalSum = computed(() => f.terms.reduce((a, t) => a + (t.nominal ?? 0), 0))
+const nominalLeft = computed(() => f.contractValue - nominalSum.value)
+const pctOk = computed(() => termMode.value === 'nominal'
+  ? f.contractValue > 0 && nominalLeft.value === 0
+  : Math.abs(pctSum.value - 100) < 0.001)
+/** Persen tiap termin dihitung dari nominalnya; selisih pembulatan dibebankan ke termin terakhir yang belum ditagih. */
+function syncPercents() {
+  const c = f.contractValue
+  for (const t of f.terms) if (!billed(t)) t.percent = c > 0 ? round2((t.nominal ?? 0) / c * 100) : 0
+  if (c > 0 && nominalLeft.value === 0) {
+    const last = [...f.terms].reverse().find(t => !billed(t))
+    if (last) last.percent = round2(last.percent + (100 - percentTotal(f.terms.map(t => t.percent))))
+  }
+}
+function setTermMode(m: 'persen' | 'nominal') {
+  if (m === termMode.value) return
+  if (m === 'nominal') f.terms.forEach((t, i) => { t.nominal = amounts.value[i] ?? 0 })
+  termMode.value = m
+}
+function setNominal(t: TermRow, n: number) { t.nominal = n; syncPercents() }
+watch(() => f.contractValue, () => { if (termMode.value === 'nominal') syncPercents() })
 const kasAuto = computed(() => Math.round((100 - f.capitalPct - f.workerPct) * 100) / 100)
 watch(kasAuto, (v) => { f.cashPct = v }, { immediate: true })
 const schemeName = computed(() => schemes.value.find(s => s.id === f.schemeId)?.name ?? 'Kustom')
@@ -69,7 +93,13 @@ function pickScheme(id: number) {
   f.capitalPct = s.capitalPct
   f.workerPct = s.workerPct
 }
-function addTerm() { f.terms.push({ name: `Termin ${f.terms.length + 1}`, percent: Math.max(0, Math.round((100 - pctSum.value) * 100) / 100), conditions: null, dueDate: null }) }
+function addTerm() {
+  const t: TermRow = { name: `Termin ${f.terms.length + 1}`, percent: Math.max(0, round2(100 - pctSum.value)), conditions: null, dueDate: null }
+  if (termMode.value === 'nominal') t.nominal = Math.max(0, nominalLeft.value)
+  f.terms.push(t)
+  if (termMode.value === 'nominal') syncPercents()
+}
+function removeTerm(i: number) { f.terms.splice(i, 1); if (termMode.value === 'nominal') syncPercents() }
 function addMember(id: number) { f.members.push({ userId: id, roleInProject: null, payType: 'bagi_hasil', fixedFee: 0, shareWeight: 1 }) }
 function addMilestone() { f.milestones.push({ name: '', targetDate: null, status: 'belum' }) }
 function onClientFooter(q: string) {
@@ -82,11 +112,12 @@ const errors = ref<string | null>(null)
 async function save() {
   errors.value = null
   if (!f.name.trim()) { errors.value = 'Nama proyek wajib diisi.'; return }
-  if (!pctOk.value) { errors.value = `Total persen termin harus 100% (sekarang ${percent(pctSum.value)}).`; return }
+  if (!pctOk.value) { errors.value = termMode.value === 'nominal' ? `Total nominal termin harus sama dengan nilai kontrak (selisih ${rupiah(nominalLeft.value)}).` : `Total persen termin harus 100% (sekarang ${percent(pctSum.value)}).`; return }
   if (f.cashPct < 0) { errors.value = 'Total bagian modal + pekerja melebihi 100%.'; return }
   saving.value = true
   try {
-    const body = { ...f, newClient: newClient.value?.name ? newClient.value : null, milestones: f.milestones.filter(m => m.name.trim()) }
+    const terms = f.terms.map(({ nominal, ...t }) => (termMode.value === 'nominal' ? { ...t, amount: nominal ?? 0 } : t))
+    const body = { ...f, terms, newClient: newClient.value?.name ? newClient.value : null, milestones: f.milestones.filter(m => m.name.trim()) }
     const r = props.projectId
       ? await $fetch<{ id: number }>(`/api/projects/${props.projectId}`, { method: 'PUT', body })
       : await $fetch<{ id: number }>('/api/projects', { method: 'POST', body })
@@ -177,16 +208,29 @@ async function remove() {
           <UiMoneyInput v-model="f.contractValue" label="Nilai kontrak" />
           <UiMoneyInput v-model="f.budget" label="Anggaran biaya" hint="Batas biaya proyek untuk dipantau di tab Pengeluaran." />
         </div>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <span class="text-sm font-semibold text-ink-2">Isi termin dengan</span>
+          <div role="group" aria-label="Mode input termin" class="pill-tabs">
+            <button type="button" class="pill-tab" :aria-pressed="termMode === 'persen'" @click="setTermMode('persen')">Persentase (%)</button>
+            <button type="button" class="pill-tab" :aria-pressed="termMode === 'nominal'" @click="setTermMode('nominal')">Nominal (Rp)</button>
+          </div>
+        </div>
         <div class="flex flex-col gap-3">
-          <div v-for="(t, i) in f.terms" :key="t.id ?? `n${i}`" class="rounded-xl border p-4 grid gap-3 sm:grid-cols-[1.2fr_100px_1fr] items-end" :class="billed(t) ? 'bg-soft border-line-2' : 'border-line-2'">
-            <label class="field">Termin<input v-model="t.name" type="text" class="input"></label>
-            <label class="field">Persen (%)<input v-model.number="t.percent" type="number" min="0" max="100" step="0.01" class="input" :disabled="billed(t)"></label>
-            <div class="flex flex-col gap-1.5"><span class="text-sm font-semibold text-ink-2">Nominal</span><span class="min-h-11 flex items-center text-sm font-bold tabular-nums">{{ rupiah(amounts[i]) }}</span></div>
-            <label class="field sm:col-span-1">Syarat penagihan<input v-model="t.conditions" type="text" class="input" placeholder="Mis. setelah UAT"></label>
-            <UiDateTimeInput v-model="t.dueDate" label="Jatuh tempo" />
+          <div v-for="(t, i) in f.terms" :key="t.id ?? `n${i}`" class="rounded-xl border p-4 grid gap-3 sm:grid-cols-3 items-end" :class="billed(t) ? 'bg-soft border-line-2' : 'border-line-2'">
+            <label class="field min-w-0">Termin<input v-model="t.name" type="text" class="input"></label>
+            <template v-if="termMode === 'persen'">
+              <label class="field min-w-0">Persen (%)<input v-model.number="t.percent" type="number" min="0" max="100" step="0.01" class="input" :disabled="billed(t)"></label>
+              <div class="flex flex-col gap-1.5 min-w-0"><span class="text-sm font-semibold text-ink-2">Nominal</span><span class="min-h-11 flex items-center text-sm font-bold tabular-nums">{{ rupiah(amounts[i]) }}</span></div>
+            </template>
+            <template v-else>
+              <UiMoneyInput :model-value="t.nominal ?? 0" label="Nominal" :disabled="billed(t)" @update:model-value="setNominal(t, $event)" />
+              <div class="flex flex-col gap-1.5 min-w-0"><span class="text-sm font-semibold text-ink-2">Persen</span><span class="min-h-11 flex items-center text-sm font-bold tabular-nums">{{ percent(t.percent) }}</span></div>
+            </template>
+            <label class="field min-w-0">Syarat penagihan<input v-model="t.conditions" type="text" class="input" placeholder="Mis. setelah UAT"></label>
+            <div class="min-w-0"><UiDateTimeInput v-model="t.dueDate" label="Jatuh tempo" /></div>
             <div class="flex items-center justify-end gap-2 min-h-11">
               <UiBadge v-if="billed(t)" :tone="TERM_STATUS[(t.status as TermStatus)]" />
-              <button v-else type="button" class="btn-ghost !min-h-10 !px-2.5 text-danger-700" aria-label="Hapus termin" :disabled="f.terms.length <= 1" @click="f.terms.splice(i, 1)">
+              <button v-else type="button" class="btn-ghost !min-h-10 !px-2.5 text-danger-700" aria-label="Hapus termin" :disabled="f.terms.length <= 1" @click="removeTerm(i)">
                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
                 Hapus
               </button>
@@ -195,7 +239,8 @@ async function remove() {
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3">
           <button type="button" class="btn-secondary btn-sm" @click="addTerm">+ Tambah termin</button>
-          <span role="status" class="text-sm font-semibold" :class="pctOk ? 'text-success-700' : 'text-danger-700'">Total {{ percent(pctSum) }}{{ pctOk ? ' ✓' : ' — harus 100%' }}</span>
+          <span v-if="termMode === 'nominal'" role="status" class="text-sm font-semibold" :class="pctOk ? 'text-success-700' : 'text-danger-700'">Total {{ rupiah(nominalSum) }} dari {{ rupiah(f.contractValue) }}{{ pctOk ? ' ✓' : nominalLeft > 0 ? ` — sisa ${rupiah(nominalLeft)}` : ` — lebih ${rupiah(-nominalLeft)}` }}</span>
+          <span v-else role="status" class="text-sm font-semibold" :class="pctOk ? 'text-success-700' : 'text-danger-700'">Total {{ percent(pctSum) }}{{ pctOk ? ' ✓' : ' — harus 100%' }}</span>
         </div>
       </section>
 
