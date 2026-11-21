@@ -21,7 +21,7 @@ const tabs = computed(() => ([
   { key: 'pembayaran', label: 'Pembayaran', show: can.value.money, count: fin.value?.terms.length },
   { key: 'pengeluaran', label: 'Pengeluaran', show: can.value.money, count: fin.value?.expenses.length },
   { key: 'bug', label: 'Bug', show: can.value.bugs, count: data.value?.bugCounts?.open },
-  { key: 'tim', label: 'Tim & Bagi Hasil', show: true },
+  { key: 'tim', label: 'Tim', show: true },
   { key: 'dokumen', label: 'Dokumen', show: can.value.team, count: data.value?.documents.length },
 ] as { key: TabKey, label: string, show: boolean, count?: number }[]).filter(t => t.show))
 const tab = ref<TabKey>((route.query.tab as TabKey) || 'ringkasan')
