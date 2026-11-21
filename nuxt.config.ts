@@ -32,6 +32,12 @@ export default defineNuxtConfig({
     fileSecret: '',
     appUrl: 'http://localhost:3000',
     storageDir: './storage',
+    // Penyimpanan S3-kompatibel (MinIO). Bila semuanya terisi, upload disimpan di bucket, bukan folder lokal.
+    s3Endpoint: '',
+    s3Bucket: '',
+    s3AccessKey: '',
+    s3SecretKey: '',
+    s3Region: 'us-east-1',
     smtpHost: '',
     smtpPort: '587',
     smtpUser: '',

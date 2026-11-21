@@ -8,6 +8,12 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       # Dipaksa ke volume permanen. Jangan isi NUXT_STORAGE_DIR di Coolify; nilai ./storage dari .env.example membuat upload hilang tiap deploy.
       NUXT_STORAGE_DIR: /data/storage
+      # MinIO / S3 (opsional). Bila endpoint, bucket, dan kedua kunci terisi, upload disimpan di bucket.
+      NUXT_S3_ENDPOINT: ${NUXT_S3_ENDPOINT:-}
+      NUXT_S3_BUCKET: ${NUXT_S3_BUCKET:-}
+      NUXT_S3_ACCESS_KEY: ${NUXT_S3_ACCESS_KEY:-}
+      NUXT_S3_SECRET_KEY: ${NUXT_S3_SECRET_KEY:-}
+      NUXT_S3_REGION: ${NUXT_S3_REGION:-us-east-1}
       NUXT_SESSION_SECRET: ${NUXT_SESSION_SECRET}
       NUXT_FILE_SECRET: ${NUXT_FILE_SECRET}
       NUXT_APP_URL: ${NUXT_APP_URL}

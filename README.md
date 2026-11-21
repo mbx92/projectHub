@@ -86,3 +86,16 @@ Repo ini siap deploy lewat `Dockerfile` atau `docker-compose.yml` (hanya aplikas
 2. Isi environment variable (lihat `.env.example`): `DATABASE_URL` (server DB yang sama), `NUXT_SESSION_SECRET`, `NUXT_FILE_SECRET`, `NUXT_APP_URL` (URL domain https), `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, serta SMTP bila perlu.
 3. Pasang domain pada service `app` (port 4044). Health check: `/api/health`.
 4. Saat start, container otomatis menjalankan migrasi dan seed dasar (idempotent), lalu server. File unggahan tersimpan di volume `/data/storage`; cadangkan volume ini beserta database.
+
+### Penyimpanan file di MinIO / S3 (opsional)
+
+Secara bawaan upload disimpan di volume `/data/storage`. Untuk memakai bucket MinIO, isi lima variabel ini di Coolify (semuanya harus terisi, selain region):
+
+| Variabel | Contoh |
+|---|---|
+| `NUXT_S3_ENDPOINT` | `https://minio.contoh.id` (atau alamat internal) |
+| `NUXT_S3_BUCKET` | `projecthub` (dibuat otomatis bila kredensial mengizinkan) |
+| `NUXT_S3_ACCESS_KEY` / `NUXT_S3_SECRET_KEY` | kunci akses khusus bucket ini |
+| `NUXT_S3_REGION` | `us-east-1` (bawaan) |
+
+File tetap privat: diunduh lewat tautan bertanda tangan aplikasi, bucket tidak perlu publik. Memindahkan file yang sudah ada di volume ke bucket (aman diulang, file lokal tidak dihapus): `npx tsx server/database/upload-files-to-s3.ts` di terminal container (tambah `--dry` untuk uji coba). Selama masa peralihan, file yang belum dipindah tetap dibaca dari volume.
