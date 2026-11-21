@@ -19,6 +19,6 @@ services:
     volumes:
       - storage:/data/storage
     expose:
-      - "3000"
+      - "4044"
 volumes:
   storage:
