@@ -2,7 +2,7 @@
 /** Tampilan invoice bergaya kertas (HTML) — dipakai di pratinjau form dan halaman detail invoice. */
 interface PaperItem { description: string, qty: number, price: number }
 defineProps<{
-  business: { name: string, address?: string | null, email?: string | null, whatsapp?: string | null, npwp?: string | null, logoUrl?: string | null }
+  business: { name: string, address?: string | null, email?: string | null, whatsapp?: string | null, npwp?: string | null, logoUrl?: string | null, signatureUrl?: string | null, signerName?: string | null, signerTitle?: string | null }
   number: string
   clientName?: string | null
   clientContact?: string | null
@@ -97,5 +97,13 @@ defineProps<{
         <img :src="qrisUrl" alt="Kode QRIS pembayaran" class="w-24 h-24 object-contain">
       </div>
     </footer>
+
+    <div v-if="business.signatureUrl || business.signerName" class="flex flex-col items-center gap-1 self-end w-48 text-xs text-center">
+      <span class="text-muted">Hormat kami,</span>
+      <img v-if="business.signatureUrl" :src="business.signatureUrl" alt="Tanda tangan" class="h-16 object-contain">
+      <div v-else class="h-16" />
+      <span class="font-semibold border-t border-line-2 pt-1 w-full">{{ business.signerName || business.name }}</span>
+      <span v-if="business.signerTitle" class="text-muted">{{ business.signerTitle }}</span>
+    </div>
   </article>
 </template>

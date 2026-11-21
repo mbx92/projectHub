@@ -126,7 +126,7 @@ useClickOutside(accBox, () => { accOpen.value = false })
     <div class="flex items-center gap-2 shrink-0">
       <div v-if="createItems.length" ref="createBox" class="relative">
         <button type="button" class="btn-dark !px-3.5" aria-haspopup="menu" :aria-expanded="createOpen" @click="createOpen = !createOpen">+ <span class="hidden sm:inline">Buat</span></button>
-        <div v-if="createOpen" role="menu" class="absolute right-0 top-full mt-1 w-60 bg-white border border-line-2 rounded-lg shadow-lg p-1 z-50" @keydown.esc="createOpen = false">
+        <div v-if="createOpen" role="menu" class="fixed left-3 right-3 top-[72px] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-1 sm:w-60 bg-white border border-line-2 rounded-lg shadow-lg p-1 z-50" @keydown.esc="createOpen = false">
           <NuxtLink v-for="c in createItems" :key="c.to" :to="c.to" role="menuitem" class="flex items-center min-h-11 px-3 rounded-md text-sm !text-ink no-underline hover:bg-soft-2" @click="createOpen = false">{{ c.label }}</NuxtLink>
         </div>
       </div>
@@ -136,12 +136,12 @@ useClickOutside(accBox, () => { accOpen.value = false })
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#344054" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0" /></svg>
           <span v-if="notif.unread" aria-hidden="true" class="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-danger-600 text-white text-[10px] font-bold flex items-center justify-center">{{ notif.unread > 9 ? '9+' : notif.unread }}</span>
         </button>
-        <div v-if="notifOpen" role="dialog" aria-label="Notifikasi" class="absolute right-0 top-full mt-1 w-[min(360px,calc(100vw-32px))] bg-white border border-line-2 rounded-xl shadow-xl z-50" @keydown.esc="notifOpen = false">
+        <div v-if="notifOpen" role="dialog" aria-label="Notifikasi" class="fixed left-3 right-3 top-[72px] sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-1 sm:w-[360px] bg-white border border-line-2 rounded-xl shadow-xl z-50" @keydown.esc="notifOpen = false">
           <div class="flex items-center justify-between px-4 py-3 border-b border-line-3">
             <span class="text-sm font-bold">Notifikasi</span>
             <button v-if="notif.unread" type="button" class="text-xs font-semibold text-brand-700" @click="readAll">Tandai semua dibaca</button>
           </div>
-          <ul class="max-h-96 overflow-auto m-0 p-1 list-none">
+          <ul class="max-h-[min(24rem,calc(100vh-170px))] overflow-auto m-0 p-1 list-none">
             <li v-for="n in notif.items" :key="n.id">
               <button type="button" class="w-full text-left flex gap-3 px-3 py-2.5 rounded-lg hover:bg-soft-2" @click="openNotif(n)">
                 <span class="mt-1.5 w-2 h-2 rounded-full shrink-0" :class="n.read ? 'bg-transparent' : 'bg-brand-600'" aria-hidden="true" />

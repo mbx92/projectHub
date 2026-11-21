@@ -26,6 +26,7 @@ const [{ data: settings, refresh: rSet }, { data: schemes, refresh: rSch }, { da
 const biz = reactive({ ...(settings.value!.business) })
 const inv = reactive({ ...(settings.value!.invoice!), methods: { ...settings.value!.invoice!.methods } })
 const logoUrl = ref(settings.value?.business.logoUrl ?? null)
+const signatureUrl = ref((settings.value?.business as any).signatureUrl ?? null)
 const qrisUrl = ref(settings.value?.invoice?.qrisUrl ?? null)
 const numberPreview = computed(() => {
   const today = todayISO()
@@ -34,11 +35,12 @@ const numberPreview = computed(() => {
   return inv.numberFormat.replace('[TAHUN]', today.slice(0, 4)).replace('[BULAN]', today.slice(5, 7)).replace(/\[NOMOR(?: \d DIGIT)?\]/, '15'.padStart(digits, '0'))
 })
 async function saveProfile() {
-  const { logoUrl: _l, ...business } = biz as any
+  const { logoUrl: _l, signatureUrl: _s, ...business } = biz as any
   const { qrisUrl: _q, ...invoice } = inv as any
   try { await $fetch('/api/settings', { method: 'PUT', body: { business, invoice } }); toast.success('Pengaturan disimpan'); await rSet() } catch (e) { toast.error(errorMessage(e)) }
 }
 function onLogo(f: UploadedFile) { logoUrl.value = f.url }
+function onSignature(f: UploadedFile) { signatureUrl.value = f.url }
 function onQris(f: UploadedFile) { qrisUrl.value = f.url }
 
 // ── Skema ──
@@ -248,6 +250,21 @@ const INTEGRATIONS = [
           <UiSelect v-model="biz.timezone" label="Zona waktu" :options="[{ value: 'Asia/Makassar', label: 'WITA (UTC+8) — Bali' }, { value: 'Asia/Jakarta', label: 'WIB (UTC+7)' }, { value: 'Asia/Jayapura', label: 'WIT (UTC+9)' }]" />
         </div>
         <label class="field">Alamat<textarea v-model="biz.address" rows="3" class="input" /></label>
+        <div class="flex flex-col gap-3 rounded-xl border border-line-2 p-4">
+          <div class="flex flex-col gap-1"><h3 class="m-0 text-sm font-bold">Tanda tangan usaha</h3><span class="text-xs text-muted">Tercetak di bagian bawah invoice dan kuitansi pembayaran.</span></div>
+          <div class="flex flex-wrap items-center gap-4">
+            <img v-if="signatureUrl" :src="signatureUrl" alt="Tanda tangan usaha" class="h-16 max-w-48 object-contain border border-line-2 rounded-lg bg-white p-1">
+            <div v-else class="h-16 w-40 rounded-lg border border-dashed border-line-2 text-xs text-muted flex items-center justify-center">Belum ada</div>
+            <div class="flex flex-col gap-1.5">
+              <UiFileButton v-model="biz.signatureKey" folder="logo" label="Unggah tanda tangan" accept="image/png,image/jpeg" @uploaded="onSignature" />
+              <span class="text-xs text-muted">PNG/JPG, sebaiknya latar transparan atau putih</span>
+            </div>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="field">Nama penandatangan<input v-model="biz.signerName" class="input" placeholder="Mis. Pande"></label>
+            <label class="field">Jabatan<input v-model="biz.signerTitle" class="input" placeholder="Mis. Pendiri"></label>
+          </div>
+        </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="field">Format nomor invoice<input v-model="inv.numberFormat" class="input"><span class="hint">Token: [TAHUN] [BULAN] [NOMOR 3 DIGIT] · Contoh: {{ numberPreview }}</span></label>
           <UiSelect model-value="IDR" label="Mata uang" :options="[{ value: 'IDR', label: 'Rupiah (IDR)' }]" />

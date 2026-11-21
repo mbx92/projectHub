@@ -14,6 +14,7 @@ const [{ data: clients, refresh: refreshClients }, { data: users }, { data: sche
   useFetch('/api/users', { default: () => [] }),
   useFetch('/api/schemes', { default: () => [] }),
 ])
+const { data: funders } = await useFetch('/api/investors/options', { default: () => [] as { investorId: number, name: string, status: string, capital: number }[] })
 const existing = props.projectId ? (await useFetch(`/api/projects/${props.projectId}`)).data : ref(null)
 
 const defScheme = schemes.value.find(s => s.isDefault) ?? schemes.value[0]
@@ -29,6 +30,7 @@ const f = reactive({
   ] as TermRow[],
   members: [] as MemberRow[],
   milestones: [] as MsRow[],
+  investorIds: [] as number[],
 })
 const newClient = ref<null | { name: string, contactName: string, whatsapp: string, email: string }>(null)
 
@@ -42,6 +44,7 @@ if (existing.value) {
     terms: (e.finance?.terms ?? []).map((t: any) => ({ id: t.id, name: t.name, percent: Number(t.percent), conditions: t.conditions, dueDate: t.dueDate, status: t.status })),
     members: e.members.map((m: any) => ({ userId: m.userId, roleInProject: m.roleInProject, payType: m.payType, fixedFee: m.fixedFee ?? 0, shareWeight: m.shareWeight })),
     milestones: e.milestones.map((m: any) => ({ id: m.id, name: m.name, targetDate: m.targetDate, status: m.status })),
+    investorIds: e.investorIds ?? [],
   })
 }
 
@@ -101,6 +104,11 @@ function addTerm() {
 }
 function removeTerm(i: number) { f.terms.splice(i, 1); if (termMode.value === 'nominal') syncPercents() }
 function addMember(id: number) { f.members.push({ userId: id, roleInProject: null, payType: 'bagi_hasil', fixedFee: 0, shareWeight: 1 }) }
+function toggleInvestor(id: number) {
+  const i = f.investorIds.indexOf(id)
+  if (i >= 0) f.investorIds.splice(i, 1)
+  else f.investorIds.push(id)
+}
 function addMilestone() { f.milestones.push({ name: '', targetDate: null, status: 'belum' }) }
 function onClientFooter(q: string) {
   newClient.value = { name: q, contactName: '', whatsapp: '', email: '' }
@@ -257,6 +265,25 @@ async function remove() {
           <label class="field">Bagian modal (%)<input v-model.number="f.capitalPct" type="number" min="0" max="100" class="input"><span class="hint">Untuk investor, sesuai porsi modal. Isi 0 bila tidak didanai investor.</span></label>
           <label class="field">Bagian pekerja (%)<input v-model.number="f.workerPct" type="number" min="0" max="100" class="input"><span class="hint">Dibagi ke anggota tim “bagi hasil”.</span></label>
           <div class="field">Kas OCN (sisa otomatis)<div class="min-h-11 flex items-center px-3 rounded-lg bg-soft font-bold" :class="f.cashPct < 0 && 'text-danger-700'">{{ percent(f.cashPct) }}</div></div>
+        </div>
+
+        <div v-if="f.capitalPct > 0" class="flex flex-col gap-2 rounded-xl border border-line-2 p-3">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-sm font-semibold">Investor pendana</span>
+            <span class="text-xs text-muted">Pilih investor yang mendanai proyek ini. Bagian modal dibagi ke mereka sesuai porsi modal, dan proyek hanya terlihat oleh mereka. Kosongkan untuk membagi ke semua investor aktif.</span>
+          </div>
+          <div v-if="funders.length" role="group" aria-label="Investor pendana" class="flex flex-wrap gap-2">
+            <button
+              v-for="inv in funders" :key="inv.investorId" type="button" :aria-pressed="f.investorIds.includes(inv.investorId)"
+              class="inline-flex items-center gap-2 min-h-10 px-3 rounded-lg border text-sm font-medium"
+              :class="f.investorIds.includes(inv.investorId) ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-line-2 bg-white text-ink-2'"
+              @click="toggleInvestor(inv.investorId)"
+            >
+              <svg v-if="f.investorIds.includes(inv.investorId)" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg>
+              {{ inv.name }}<span class="text-xs text-muted">{{ inv.status === 'aktif' ? rupiahShort(inv.capital) : 'calon' }}</span>
+            </button>
+          </div>
+          <span v-else class="text-xs text-muted">Belum ada investor. Undang investor di Pengaturan › Pengguna.</span>
         </div>
 
         <div class="flex flex-col gap-2">

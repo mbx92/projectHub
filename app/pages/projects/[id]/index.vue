@@ -412,6 +412,7 @@ const projects = computed(() => [{ id: p.value.id, name: p.value.name }])
 
     <!-- ═══ DOKUMEN ═══ -->
     <template v-if="tab === 'dokumen'">
+      <ProjectSignatureRequests v-if="can.edit" :project-id="id" :project-name="p.name" :client-email="data.client && 'email' in data.client ? data.client.email : null" />
       <div class="grid gap-6 lg:grid-cols-[1.6fr_1fr] items-start">
         <section class="card-pad flex flex-col gap-4 min-w-0">
           <div class="flex items-center justify-between"><h2 class="section-title">Dokumen Proyek</h2><span class="text-sm text-muted">{{ data.documents.length }} file</span></div>

@@ -25,8 +25,13 @@ export async function accessibleProjectIds(user: SessionUser): Promise<number[] 
       ))
     return rows.map(r => r.id)
   }
+  // Investor: proyek yang ia danai; proyek tanpa pilihan investor pendana tetap terlihat (perilaku lama).
+  const mine = user.investorId
+    ? sql`(not exists (select 1 from ${schema.projectInvestors} pi where pi.project_id = ${schema.projects.id})
+        or exists (select 1 from ${schema.projectInvestors} pi where pi.project_id = ${schema.projects.id} and pi.investor_id = ${user.investorId}))`
+    : undefined
   const rows = await db.select({ id: schema.projects.id }).from(schema.projects)
-    .where(and(gt(schema.projects.capitalPct, 0), eq(schema.projects.archived, false)))
+    .where(and(gt(schema.projects.capitalPct, 0), eq(schema.projects.archived, false), mine))
   return rows.map(r => r.id)
 }
 

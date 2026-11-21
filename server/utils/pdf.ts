@@ -72,6 +72,25 @@ export async function letterhead(business: BusinessProfile, rightTitle: string, 
   }
 }
 
+/** Blok tanda tangan usaha (gambar + nama + jabatan), rata kanan. */
+export async function signatureBlock(business: BusinessProfile, place?: string): Promise<Content> {
+  const sig = await storedImage(business.signatureKey)
+  if (!sig && !business.signerName) return { text: '' }
+  const img: Content = sig?.image ? { image: sig.image, height: 56, alignment: 'center' } : sig?.svg ? { svg: sig.svg, height: 56, alignment: 'center' } : { text: ' ', margin: [0, 28, 0, 28] }
+  return {
+    width: 170,
+    unbreakable: true,
+    margin: [0, 24, 0, 0],
+    stack: [
+      ...(place ? [{ text: place, alignment: 'center', color: C.muted, fontSize: 9 } as Content] : [{ text: 'Hormat kami,', alignment: 'center', color: C.muted, fontSize: 9 } as Content]),
+      { ...img, margin: [0, 4, 0, 2] } as Content,
+      { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 170, y2: 0, lineWidth: 0.6, lineColor: C.line }] },
+      { text: business.signerName || business.name, bold: true, alignment: 'center', margin: [0, 3, 0, 0] },
+      business.signerTitle ? { text: business.signerTitle, alignment: 'center', color: C.muted, fontSize: 9 } : { text: '' },
+    ],
+  } as unknown as Content
+}
+
 export function tableLayout() {
   return {
     hLineWidth: (i: number) => (i === 0 ? 0 : 0.6),
@@ -154,6 +173,7 @@ export async function invoicePdf(data: LoadedInvoice): Promise<Buffer> {
       ],
     },
   ]
+  content.push({ columns: [{ width: '*', text: '' }, await signatureBlock(business)] })
   return renderPdf({ content, footer: footer(`${business.name} · ${inv.number}`), info: { title: inv.number } })
 }
 
@@ -173,8 +193,7 @@ export async function receiptPdf(data: LoadedInvoice, paymentId: number): Promis
       [{ text: 'Metode', color: C.muted }, pay.method],
       [{ text: 'Status invoice', color: C.muted }, data.outstanding > 0 ? `Sisa tagihan ${rupiah(data.outstanding)}` : 'Lunas'],
     ] }, layout: { hLineWidth: () => 0.6, vLineWidth: () => 0, hLineColor: () => C.line, paddingTop: () => 8, paddingBottom: () => 8 } },
-    { text: `${business.address ? business.address.split('\n')[0] + ', ' : ''}${dateLongId(pay.date)}`, alignment: 'right', margin: [0, 30, 0, 40] },
-    { text: business.name, alignment: 'right', bold: true },
+    { columns: [{ width: '*', text: '' }, await signatureBlock(business, `${business.address ? business.address.split('\n')[0] + ', ' : ''}${dateLongId(pay.date)}`)] },
   ]
   return renderPdf({ content, footer: footer(`${business.name} · ${no}`), info: { title: no } })
 }

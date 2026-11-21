@@ -4,7 +4,7 @@ const PUBLIC = ['/login', '/forgot-password', '/reset-password', '/invite']
 export default defineNuxtRouteMiddleware(async (to) => {
   const { user, loaded, fetchMe, homePath, can } = useAuth()
   if (!loaded.value) await fetchMe()
-  const isPublic = PUBLIC.includes(to.path)
+  const isPublic = PUBLIC.includes(to.path) || to.path.startsWith('/tanda-tangan/')
   if (!user.value && !isPublic) {
     return navigateTo({ path: '/login', query: to.fullPath !== '/' ? { next: to.fullPath } : undefined })
   }

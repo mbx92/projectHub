@@ -16,7 +16,8 @@ export async function computeDistribution(projectId: number, amountOverride?: nu
   const netProfit = amountOverride ?? available
   if (netProfit > available) throw createError({ statusCode: 422, statusMessage: `Laba yang belum dibagi hanya ${rupiah(available)}.` })
 
-  const investors = project.capitalPct > 0 ? (await capitalPortions()).filter(p => p.status === 'aktif' && p.capital > 0) : []
+  const funders = (await db.select({ id: schema.projectInvestors.investorId }).from(schema.projectInvestors).where(eq(schema.projectInvestors.projectId, projectId))).map(r => r.id)
+  const investors = project.capitalPct > 0 ? (await capitalPortions()).filter(p => p.status === 'aktif' && p.capital > 0 && (!funders.length || funders.includes(p.investorId))) : []
   const members = (await projectMembersOf([projectId])).filter(m => m.payType === 'bagi_hasil' && m.shareWeight > 0)
   const workers = members.map(m => ({ userId: m.userId, name: m.name, weight: m.shareWeight }))
   const calc = calcDistribution({ netProfit, capitalPct: project.capitalPct, workerPct: project.workerPct, cashPct: project.cashPct, investors, workers })

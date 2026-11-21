@@ -361,3 +361,31 @@ export const settings = pgTable('settings', {
   value: jsonb('nilai').notNull(),
   ...audit,
 })
+
+// ── Permintaan tanda tangan klien (berita acara / persetujuan) ────────
+export const signatureRequests = pgTable('signature_requests', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  title: varchar('judul', { length: 200 }).notNull(),
+  body: text('isi').notNull(),
+  /** Token acak pada tautan publik klien. */
+  token: varchar('token', { length: 64 }).notNull(),
+  /** menunggu | ditandatangani | dibatalkan (kedaluwarsa dihitung dari expires_at) */
+  status: varchar('status', { length: 20 }).notNull().default('menunggu'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  sentTo: varchar('dikirim_ke', { length: 190 }),
+  signedAt: timestamp('signed_at', { withTimezone: true }),
+  signerName: varchar('penandatangan', { length: 160 }),
+  signatureKey: text('tanda_tangan'),
+  signerIp: varchar('ip', { length: 64 }),
+  signerAgent: varchar('perangkat', { length: 300 }),
+  contentHash: varchar('hash_isi', { length: 64 }),
+  ...audit,
+}, t => [uniqueIndex('signature_requests_token_uq').on(t.token), index('signature_requests_project_idx').on(t.projectId)])
+
+/** Investor pendana per proyek. Kosong = bagian modal dibagi ke semua investor aktif (perilaku lama). */
+export const projectInvestors = pgTable('project_investors', {
+  projectId: integer('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  investorId: integer('investor_id').notNull().references(() => investors.id, { onDelete: 'cascade' }),
+  ...audit,
+}, t => [primaryKey({ columns: [t.projectId, t.investorId] })])

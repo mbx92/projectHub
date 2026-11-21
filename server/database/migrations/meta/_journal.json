@@ -8,6 +8,20 @@
       "when": 1795228285441,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795256005116,
+      "tag": "0001_kind_lorna_dane",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795256378507,
+      "tag": "0002_purple_smiling_tiger",
+      "breakpoints": true
     }
   ]
 }

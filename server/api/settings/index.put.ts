@@ -12,6 +12,9 @@ export default defineEventHandler(async (event) => {
       address: z.string().trim().max(500),
       timezone: z.string().trim().max(60),
       logoKey: z.string().nullable(),
+      signatureKey: z.string().nullable().default(null),
+      signerName: z.string().trim().max(120).default(''),
+      signerTitle: z.string().trim().max(120).default(''),
     }).optional(),
     invoice: z.object({
       numberFormat: z.string().trim().min(3).max(60).refine(v => /\[NOMOR( \d DIGIT)?\]/.test(v), 'format harus memuat [NOMOR] atau [NOMOR 3 DIGIT]'),

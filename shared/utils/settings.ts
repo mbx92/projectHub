@@ -7,6 +7,10 @@ export interface BusinessProfile {
   address: string
   timezone: string
   logoKey: string | null
+  /** Tanda tangan usaha di invoice & kuitansi. */
+  signatureKey: string | null
+  signerName: string
+  signerTitle: string
 }
 
 export interface InvoiceSettings {
@@ -20,7 +24,7 @@ export interface InvoiceSettings {
   methods: { transfer: boolean, qris: boolean, tunai: boolean }
 }
 
-export type NotifEvent = 'termin_jatuh_tempo' | 'pembayaran_diterima' | 'bug_kritis' | 'bug_ditugaskan' | 'komentar_bug' | 'distribusi' | 'laporan_bulanan' | 'undangan' | 'bug_baru' | 'dokumen_baru' | 'status_proyek'
+export type NotifEvent = 'termin_jatuh_tempo' | 'pembayaran_diterima' | 'bug_kritis' | 'bug_ditugaskan' | 'komentar_bug' | 'distribusi' | 'laporan_bulanan' | 'undangan' | 'bug_baru' | 'dokumen_baru' | 'status_proyek' | 'persetujuan_klien'
 
 export interface NotifPref { app: boolean, email: boolean }
 
@@ -34,6 +38,7 @@ export const NOTIF_EVENTS: { key: NotifEvent, name: string, desc: string }[] = [
   { key: 'bug_baru', name: 'Bug baru dilaporkan', desc: 'Bug non-kritis di semua proyek' },
   { key: 'dokumen_baru', name: 'Dokumen proyek baru', desc: 'Pada proyek yang saya ikuti' },
   { key: 'status_proyek', name: 'Status proyek berubah', desc: 'Pada proyek yang saya ikuti' },
+  { key: 'persetujuan_klien', name: 'Klien menandatangani persetujuan', desc: 'Berita acara / persetujuan di proyek' },
   { key: 'laporan_bulanan', name: 'Laporan investor bulanan', desc: 'Setiap tanggal 1' },
 ]
 
@@ -49,6 +54,7 @@ export const DEFAULT_NOTIF_PREFS: Record<NotifEvent, NotifPref> = {
   bug_baru: { app: true, email: false },
   dokumen_baru: { app: true, email: false },
   status_proyek: { app: true, email: false },
+  persetujuan_klien: { app: true, email: true },
 }
 
 export const EXPENSE_CATEGORIES = ['Server & hosting', 'Domain', 'Lisensi & software', 'Honor freelancer', 'Transportasi', 'Konsumsi', 'Perangkat', 'Pemasaran', 'Operasional', 'Lainnya'] as const
@@ -63,6 +69,9 @@ export const DEFAULT_SETTINGS: { business: BusinessProfile, invoice: InvoiceSett
     address: '',
     timezone: 'Asia/Makassar',
     logoKey: null,
+    signatureKey: null,
+    signerName: '',
+    signerTitle: '',
   },
   invoice: {
     numberFormat: 'INV-[TAHUN]-[NOMOR 3 DIGIT]',

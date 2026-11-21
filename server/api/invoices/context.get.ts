@@ -31,6 +31,6 @@ export default defineEventHandler(async (event) => {
     }),
     banks,
     settings: { ...settings, qrisUrl: signedFileUrl(settings.qrisKey, 'qris', 3600) },
-    business: { name: business.name, address: business.address, email: business.email, whatsapp: business.whatsapp, logoUrl: signedFileUrl(business.logoKey, 'logo', 3600) },
+    business: { name: business.name, address: business.address, email: business.email, whatsapp: business.whatsapp, logoUrl: signedFileUrl(business.logoKey, 'logo', 3600), signatureUrl: signedFileUrl(business.signatureKey, 'ttd', 3600), signerName: business.signerName, signerTitle: business.signerTitle },
   }
 })

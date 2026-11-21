@@ -27,6 +27,8 @@ export const projectInputSchema = z.object({
     conditions: zOptText(300),
     dueDate: zDate.nullish().transform(v => v ?? null),
   })).min(1, 'minimal satu termin'),
+  /** Investor pendana proyek (kosong = semua investor aktif sesuai porsi modal). */
+  investorIds: z.array(zId).default([]),
   members: z.array(z.object({
     userId: zId,
     roleInProject: zOptText(80),
@@ -125,6 +127,15 @@ export async function saveProject(me: SessionUser, input: ProjectInput, projectI
         await logAudit(tx, me.id, 'buat', 'term', row!.id, null, row)
       }
     }
+
+    // ── Investor pendana ──
+    const invIds = [...new Set(input.capitalPct > 0 ? input.investorIds : [])]
+    if (invIds.length) {
+      const found = await tx.select({ id: schema.investors.id }).from(schema.investors).where(inArray(schema.investors.id, invIds))
+      if (found.length !== invIds.length) throw createError({ statusCode: 422, statusMessage: 'Investor pendana tidak ditemukan.' })
+    }
+    await tx.delete(schema.projectInvestors).where(eq(schema.projectInvestors.projectId, id))
+    if (invIds.length) await tx.insert(schema.projectInvestors).values(invIds.map(investorId => ({ projectId: id!, investorId, createdBy: me.id })))
 
     // ── Tim ──
     const oldMembers = await tx.select().from(schema.projectMembers).where(eq(schema.projectMembers.projectId, id))

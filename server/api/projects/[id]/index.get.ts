@@ -22,6 +22,9 @@ export default defineEventHandler(async (event) => {
   const [pic] = p.picId ? await db.select({ id: schema.users.id, name: schema.users.name }).from(schema.users).where(eq(schema.users.id, p.picId)) : []
   const [scheme] = p.schemeId ? await db.select().from(schema.profitSchemes).where(eq(schema.profitSchemes.id, p.schemeId)) : []
 
+  const investorIds = can(me, 'proyek', 'kelola') || can(me, 'investor', 'lihat')
+    ? (await db.select({ id: schema.projectInvestors.investorId }).from(schema.projectInvestors).where(eq(schema.projectInvestors.projectId, id))).map(r => r.id)
+    : []
   const milestones = await db.select().from(schema.milestones).where(eq(schema.milestones.projectId, id)).orderBy(asc(schema.milestones.sortOrder))
   const members = seeTeam ? await projectMembersOf([id]) : []
 
@@ -92,6 +95,7 @@ export default defineEventHandler(async (event) => {
     project: { ...p, contractValue: seeMoney ? p.contractValue : null, budget: seeMoney ? p.budget : null },
     client: client && can(me, 'proyek', 'kelola') ? client : client ? { id: client.id, name: client.name } : null,
     pic: pic ?? null,
+    investorIds,
     scheme: scheme ?? null,
     milestones,
     members: members.map(m => ({ ...m, fixedFee: seeMoneyDetail ? m.fixedFee : null })),
