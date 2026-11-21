@@ -18,7 +18,13 @@ services:
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
     volumes:
       - storage:/data/storage
-    expose:
-      - "4044"
+    ports:
+      - "4044:4044"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4044/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 volumes:
   storage:

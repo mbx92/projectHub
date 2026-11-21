@@ -2,7 +2,7 @@
   <div class="flex flex-wrap min-h-screen bg-white">
     <section class="flex-[1_1_420px] bg-navy text-line p-8 sm:p-12 flex flex-col justify-between gap-10">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-[10px] bg-brand-600 text-white flex items-center justify-center font-bold text-[13px]">OCN</div>
+        <img src="/logo-mark.svg" alt="" class="w-10 h-10 rounded-[10px]">
         <span class="text-white font-bold text-base">OCN Project Hub</span>
       </div>
       <div class="flex flex-col gap-4 max-w-[460px]">
