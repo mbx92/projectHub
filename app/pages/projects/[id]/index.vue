@@ -33,6 +33,19 @@ const showExpense = ref(false)
 const editExpense = ref<any>(null)
 const showBug = ref(false)
 const showMember = ref(false)
+type MemberRow = NonNullable<typeof data.value>['members'][number]
+const editMember = ref<MemberRow | null>(null)
+function openAddMember() { editMember.value = null; showMember.value = true }
+function openEditMember(m: MemberRow) { editMember.value = m; showMember.value = true }
+async function removeMember(m: MemberRow) {
+  const active = (data.value?.bugs ?? []).filter(b => b.assigneeId === m.userId && b.status !== 'selesai').length
+  const ok = await confirm({
+    variant: 'danger', title: `Keluarkan ${m.name} dari tim?`, confirmText: 'Keluarkan',
+    message: `${m.name} tidak akan bisa melihat proyek ini lagi.${active ? ` ${active} bug aktif yang ditugaskan kepadanya akan dilepas (tanpa penanggung jawab).` : ''} Riwayat distribusi yang sudah ada tidak berubah.`,
+    action: () => $fetch<unknown>(`/api/projects/${id}/members/${m.userId}`, { method: 'DELETE' }),
+  })
+  if (ok) { toast.success(`${m.name} dikeluarkan dari tim`); await refresh() }
+}
 
 const lunasCount = computed(() => fin.value?.terms.filter(t => t.status === 'lunas').length ?? 0)
 const paidPct = computed(() => p.value.contractValue ? Math.round((fin.value?.paid ?? 0) / p.value.contractValue * 100) : 0)
@@ -61,7 +74,7 @@ const termItems = (t: TermRow): ActionItem[] => {
     { label: 'Ubah draf invoice', to: inv ? `/invoices/${inv.id}/edit` : undefined, hidden: !(can.value.moneyManage && inv?.status === 'draf') },
     { label: 'Kirim invoice', hidden: !(can.value.moneyManage && inv?.status === 'draf'), onClick: () => sendInvoice(inv!.id, inv!.number) },
     { label: 'Catat pembayaran', hidden: !(can.value.moneyManage && t.status !== 'lunas'), onClick: () => { payTerm.value = t.id; showPay.value = true } },
-    ...t.payments.map(py => ({ label: `Kuitansi ${dateId(py.date)}`, href: `/api/payments/${py.id}/receipt`, external: true, hidden: !can.value.moneyDetail })),
+    ...t.payments.map(py => ({ label: `Kuitansi ${dateId(py.date)}`, href: `/api/payments/${py.id}/receipt?download=1`, external: true, hidden: !can.value.moneyDetail })),
   ]
 }
 
@@ -125,7 +138,27 @@ async function deleteDoc(docId: number, name: string) {
   if (ok) await refresh()
 }
 const REQUIRED_DOCS = ['Kontrak', 'Spesifikasi', 'Laporan UAT', 'BAST']
-const docChecklist = computed(() => REQUIRED_DOCS.map(t => ({ label: t, done: (data.value?.documents ?? []).some(d => d.type === t && d.status === 'final') })))
+const DOC_RANK: Record<string, number> = { final: 3, review: 2, draf: 1 }
+const docChecklist = computed(() => REQUIRED_DOCS.map((t) => {
+  const docs = (data.value?.documents ?? []).filter(d => d.type === t)
+  const best = docs.reduce<string | null>((b, d) => (!b || (DOC_RANK[d.status] ?? 0) > (DOC_RANK[b] ?? 0) ? d.status : b), null)
+  return { label: t, status: best, done: best === 'final', count: docs.length }
+}))
+const docDone = computed(() => docChecklist.value.filter(c => c.done).length)
+const DOC_STATUS_LABEL: Record<string, string> = { final: 'Final', review: 'Review', draf: 'Draf' }
+const docFile = ref<HTMLInputElement | null>(null)
+function uploadRequired(type: string) { docType.value = type; docFile.value?.click() }
+const preview = ref<{ url: string | null, name: string } | null>(null)
+const AUTO_DOCS = ['BAST', 'Laporan UAT']
+const generating = ref<string | null>(null)
+async function generateDoc(type: string) {
+  generating.value = type
+  try {
+    const r = await $fetch<{ id: number }>(`/api/projects/${id}/documents/generate`, { method: 'POST', body: { type } })
+    toast.success(`${type} dibuat sebagai Draf. Silakan periksa dan edit.`)
+    await navigateTo(`/projects/${id}/dokumen/${r.id}`)
+  } catch (e) { toast.error(errorMessage(e)) } finally { generating.value = null }
+}
 
 const activityText = (a: any) => {
   if (a.entity === 'bug') return a.action === 'comment' ? `berkomentar di ${a.label}` : `${a.body} · ${a.label}`
@@ -265,7 +298,7 @@ const projects = computed(() => [{ id: p.value.id, name: p.value.name }])
                   <td class="nowrap">{{ dateId(py.date) }}</td><td>{{ t.name }}</td><td class="nowrap">{{ py.method }}</td><td class="num">{{ rupiah(py.amount) }}</td>
                   <td class="text-right"><UiActionMenu :label="`Aksi pembayaran ${dateId(py.date)}`" :items="[
                     { label: 'Lihat bukti', href: py.proofUrl ?? undefined, external: true, hidden: !py.proofUrl },
-                    { label: 'Unduh kuitansi', href: `/api/payments/${py.id}/receipt`, external: true },
+                    { label: 'Unduh kuitansi', href: `/api/payments/${py.id}/receipt?download=1`, external: true },
                     { label: 'Hapus pembayaran', danger: true, hidden: !can.moneyManage, onClick: () => deletePayment(py.id) },
                   ]" /></td>
                 </tr>
@@ -364,23 +397,31 @@ const projects = computed(() => [{ id: p.value.id, name: p.value.name }])
     <template v-if="tab === 'tim'">
       <div class="grid gap-6 xl:grid-cols-[1.4fr_1fr] items-start">
         <section v-if="can.team" class="card overflow-hidden min-w-0">
-          <div class="flex items-center justify-between gap-3 px-5 py-4">
-            <h2 class="section-title">Anggota Tim</h2>
-            <button v-if="can.edit" type="button" class="btn-secondary btn-sm" @click="showMember = true">+ Tambah Anggota</button>
+          <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-line-3">
+            <div class="flex flex-col gap-0.5"><h2 class="section-title">Anggota Tim</h2><span class="text-xs text-muted">{{ data.members.length }} anggota · {{ data.members.filter(m => m.payType === 'bagi_hasil').length }} bagi hasil</span></div>
+            <button v-if="can.edit" type="button" class="btn-secondary btn-sm" @click="openAddMember">+ Tambah Anggota</button>
           </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th scope="col">Anggota</th><th scope="col">Cara Bayar</th><th scope="col">Bug</th></tr></thead>
-              <tbody>
-                <tr v-for="m in data.members" :key="m.userId">
-                  <td><div class="flex items-center gap-2"><UiAvatar :name="m.name" :color="m.avatarColor" /><span class="flex flex-col"><span class="font-semibold">{{ m.name }}</span><span class="text-xs text-muted">{{ m.roleInProject ?? '—' }}</span></span></div></td>
-                  <td><span class="badge" :class="m.payType === 'bagi_hasil' ? 'bg-brand-50 text-brand-700' : 'bg-soft-2 text-ink-2'">{{ m.payType === 'bagi_hasil' ? `Bagi hasil${m.shareWeight !== 1 ? ` · bobot ${m.shareWeight}` : ''}` : `Tetap${m.fixedFee ? ` · ${rupiah(m.fixedFee)}` : ''}` }}</span></td>
-                  <td class="text-sm">{{ data.bugs.filter(b => b.assigneeId === m.userId && b.status !== 'selesai').length }} aktif<span class="block text-xs text-muted">{{ data.bugs.filter(b => b.assigneeId === m.userId && b.status === 'selesai').length }} selesai</span></td>
-                </tr>
-              </tbody>
-            </table>
-            <UiEmpty v-if="!data.members.length" title="Belum ada anggota tim" />
-          </div>
+          <ul v-if="data.members.length" class="m-0 p-0 list-none divide-y divide-line-3">
+            <li v-for="m in data.members" :key="m.userId" class="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5">
+              <div class="flex items-center gap-3 flex-1 min-w-48">
+                <UiAvatar :name="m.name" :color="m.avatarColor" />
+                <span class="flex flex-col min-w-0">
+                  <span class="flex items-center gap-2"><span class="font-semibold truncate">{{ m.name }}</span><span v-if="data.pic?.id === m.userId" class="badge bg-brand-50 text-brand-700 !text-[11px]">PIC</span></span>
+                  <span class="text-xs text-muted truncate">{{ m.roleInProject || 'Belum ada peran' }}</span>
+                </span>
+              </div>
+              <span class="badge shrink-0" :class="m.payType === 'bagi_hasil' ? 'bg-brand-50 text-brand-700' : 'bg-soft-2 text-ink-2'">{{ m.payType === 'bagi_hasil' ? `Bagi hasil${m.shareWeight !== 1 ? ` · bobot ${m.shareWeight}` : ''}` : `Tetap${m.fixedFee ? ` · ${rupiah(m.fixedFee)}` : ''}` }}</span>
+              <span class="flex items-center gap-1.5 text-xs shrink-0">
+                <span class="badge bg-warning-50 text-warning-700">{{ data.bugs.filter(b => b.assigneeId === m.userId && b.status !== 'selesai').length }} bug aktif</span>
+                <span class="badge bg-success-50 text-success-700">{{ data.bugs.filter(b => b.assigneeId === m.userId && b.status === 'selesai').length }} selesai</span>
+              </span>
+              <UiActionMenu v-if="can.edit" :label="`Aksi untuk ${m.name}`" :items="[
+                { label: 'Ubah', onClick: () => openEditMember(m) },
+                { label: 'Keluarkan dari tim', danger: true, onClick: () => removeMember(m) },
+              ]" />
+            </li>
+          </ul>
+          <UiEmpty v-else title="Belum ada anggota tim" />
         </section>
         <section v-if="fin" class="card-pad flex flex-col gap-3">
           <h2 class="section-title">Simulasi Bagi Hasil</h2>
@@ -419,9 +460,13 @@ const projects = computed(() => [{ id: p.value.id, name: p.value.name }])
           <ul class="m-0 p-0 list-none flex flex-col divide-y divide-line-3">
             <li v-for="d in data.documents" :key="d.id" class="flex flex-wrap items-center gap-3 py-3">
               <span class="w-10 h-10 rounded-lg bg-soft-2 text-[11px] font-bold text-muted flex items-center justify-center uppercase">{{ d.name.split('.').pop()?.slice(0, 4) }}</span>
-              <div class="flex-1 min-w-40 flex flex-col"><span class="text-sm font-semibold truncate">{{ d.name }}</span><span class="text-xs text-muted">{{ d.type }} · {{ dateId(d.createdAt) }}</span></div>
+              <div class="flex-1 min-w-40 flex flex-col"><NuxtLink v-if="d.hasContent" :to="`/projects/${id}/dokumen/${d.id}`" class="text-sm font-semibold truncate hover:text-brand-700 hover:underline" :title="`Buka ${d.name}`">{{ d.name }}</NuxtLink><button v-else-if="d.fileUrl" type="button" class="text-left text-sm font-semibold truncate hover:text-brand-700 hover:underline" :title="`Pratinjau ${d.name}`" @click="preview = { url: d.fileUrl, name: d.name }">{{ d.name }}</button><span v-else class="text-sm font-semibold truncate">{{ d.name }}</span><span class="text-xs text-muted">{{ d.type }} · {{ dateId(d.createdAt) }}</span></div>
               <div class="w-32"><UiSelect :model-value="d.status" :disabled="!can.manageDocs" size="sm" :aria-label="`Status ${d.name}`" :options="[{ value: 'draf', label: 'Draf' }, { value: 'review', label: 'Review' }, { value: 'final', label: 'Final' }]" @change="v => setDocStatus(d.id, v as string)" /></div>
               <UiActionMenu :label="`Aksi untuk ${d.name}`" :items="[
+                { label: can.manageDocs && d.status !== 'final' ? 'Buka & edit' : 'Buka', hidden: !d.hasContent, onClick: () => { navigateTo(`/projects/${id}/dokumen/${d.id}`) } },
+                { label: 'Unduh PDF', href: `/api/documents/${d.id}/export?format=pdf&download=1`, external: true, hidden: !d.hasContent },
+                { label: 'Unduh Word', href: `/api/documents/${d.id}/export?format=docx&download=1`, external: true, hidden: !d.hasContent },
+                { label: 'Pratinjau', hidden: !d.fileUrl, onClick: () => { preview = { url: d.fileUrl, name: d.name } } },
                 { label: 'Unduh', href: d.fileUrl ?? undefined, external: true, hidden: !d.fileUrl },
                 { label: 'Hapus dokumen', danger: true, hidden: !can.manageDocs, onClick: () => deleteDoc(d.id, d.name) },
               ]" />
@@ -443,21 +488,27 @@ const projects = computed(() => [{ id: p.value.id, name: p.value.name }])
           </label>
         </section>
         <section class="card-pad flex flex-col gap-3">
-          <h2 class="section-title">Dokumen Wajib</h2>
-          <ul class="m-0 p-0 list-none flex flex-col gap-2">
-            <li v-for="c in docChecklist" :key="c.label" class="flex items-center gap-2 text-sm">
-              <span class="w-5 h-5 rounded-full flex items-center justify-center" :class="c.done ? 'bg-brand-600 text-white' : 'border-2 border-line'" aria-hidden="true"><svg v-if="c.done" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg></span>
-              <span :class="c.done ? '' : 'text-muted'">{{ c.label }}</span><span class="sr-only">{{ c.done ? 'lengkap (final)' : 'belum ada versi final' }}</span>
+          <div class="flex items-center justify-between gap-2"><h2 class="section-title">Dokumen Wajib</h2><span class="badge" :class="docDone === docChecklist.length ? 'bg-success-50 text-success-700' : 'bg-soft-2 text-ink-2'">{{ docDone }}/{{ docChecklist.length }} final</span></div>
+          <div class="h-1.5 rounded-full bg-soft-2 overflow-hidden" role="progressbar" :aria-valuenow="docDone" aria-valuemin="0" :aria-valuemax="docChecklist.length" aria-label="Kelengkapan dokumen wajib"><div class="h-full bg-brand-600 transition-all" :style="{ width: `${(docDone / docChecklist.length) * 100}%` }" /></div>
+          <ul class="m-0 p-0 list-none flex flex-col divide-y divide-line-3">
+            <li v-for="c in docChecklist" :key="c.label" class="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
+              <span class="w-5 h-5 shrink-0 rounded-full flex items-center justify-center" :class="c.done ? 'bg-brand-600 text-white' : 'border-2 border-line'" aria-hidden="true"><svg v-if="c.done" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" /></svg></span>
+              <span class="flex-1 flex flex-col min-w-0"><span class="text-sm font-semibold" :class="c.done ? '' : 'text-ink-2'">{{ c.label }}</span><span class="text-xs text-muted">{{ c.status ? `${c.count} file · status tertinggi ${DOC_STATUS_LABEL[c.status] ?? c.status}` : 'Belum ada file' }}</span></span>
+              <span v-if="c.status && !c.done" class="badge bg-warning-50 text-warning-700 shrink-0">{{ DOC_STATUS_LABEL[c.status] ?? c.status }}</span>
+              <button v-if="can.manageDocs && !c.done && AUTO_DOCS.includes(c.label)" type="button" class="btn-primary btn-sm shrink-0" :disabled="!!generating" :aria-label="`Buat ${c.label} otomatis`" @click="generateDoc(c.label)">{{ generating === c.label ? 'Membuat…' : 'Buat otomatis' }}</button>
+              <button v-if="can.manageDocs && !c.done" type="button" class="btn-secondary btn-sm shrink-0" :disabled="uploading" :aria-label="`Unggah ${c.label}`" @click="uploadRequired(c.label)">{{ c.status ? 'Tambah' : 'Unggah' }}</button>
             </li>
           </ul>
-          <p class="m-0 text-xs text-muted">Tandai dokumen “Final” agar dihitung lengkap. Penyimpanan ke Google Drive tersedia di fase 2.</p>
+          <p class="m-0 text-xs text-muted">Dokumen dihitung lengkap bila berstatus “Final”. Ubah status di daftar dokumen di sebelah kiri.</p>
+          <input ref="docFile" type="file" class="sr-only" tabindex="-1" aria-hidden="true" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.zip,image/*" @change="e => { addDoc((e.target as HTMLInputElement).files?.[0]); (e.target as HTMLInputElement).value = '' }">
         </section>
       </div>
     </template>
 
+    <UiFilePreview :open="!!preview" :url="preview?.url ?? null" :name="preview?.name ?? ''" @close="preview = null" />
     <FinancePaymentModal :open="showPay" :project-id="id" :term-id="payTerm" @close="showPay = false" @saved="refresh" />
     <FinanceExpenseModal :open="showExpense" :project-id="id" :expense="editExpense" @close="showExpense = false" @saved="refresh" />
     <BugModal :open="showBug" :project-id="id" :projects="projects" @close="showBug = false" @saved="() => refresh()" />
-    <ProjectMemberModal :open="showMember" :project-id="id" :existing-ids="data.members.map(m => m.userId)" :can-money="can.editMoney" @close="showMember = false" @saved="() => refresh()" />
+    <ProjectMemberModal :open="showMember" :editing="editMember" :project-id="id" :existing-ids="data.members.map(m => m.userId)" :can-money="can.editMoney" @close="showMember = false" @saved="() => refresh()" />
   </div>
 </template>

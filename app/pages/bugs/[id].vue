@@ -36,16 +36,23 @@ async function sendComment() {
   try { await $fetch<unknown>(`/api/bugs/${id}/comments`, { method: 'POST', body: { body: draft.value } }); draft.value = ''; await refresh() } catch (e) { toast.error(errorMessage(e)) } finally { sending.value = false }
 }
 const { upload, uploading } = useUpload()
-async function addFile(e: Event) {
-  const f = (e.target as HTMLInputElement).files?.[0]
-  if (!f) return
-  try {
-    const r = await upload(f, 'bug')
-    await $fetch<unknown>(`/api/bugs/${id}/attachments`, { method: 'POST', body: { key: r.key, name: r.name, mime: r.mime, size: r.size } })
-    await refresh()
-  } catch (x) { toast.error(errorMessage(x, (x as Error).message)) }
-  (e.target as HTMLInputElement).value = ''
+async function addFiles(list: File[]) {
+  for (const f of list) {
+    try {
+      const r = await upload(f, 'bug')
+      await $fetch<unknown>(`/api/bugs/${id}/attachments`, { method: 'POST', body: { key: r.key, name: r.name, mime: r.mime, size: r.size } })
+    } catch (x) { toast.error(errorMessage(x, (x as Error).message)) }
+  }
+  await refresh()
 }
+async function addFile(e: Event) {
+  const input = e.target as HTMLInputElement
+  await addFiles([...(input.files ?? [])])
+  input.value = ''
+}
+// Ctrl+V gambar (mis. tangkapan layar) menambah lampiran bug ini.
+usePasteImages(() => !!can.value.comment, addFiles)
+const preview = ref<{ url: string | null, name: string } | null>(null)
 async function delFile(aid: number, name: string) {
   const ok = await confirm({ variant: 'danger', title: `Hapus lampiran ${name}?`, confirmText: 'Hapus', action: () => $fetch<unknown>(`/api/attachments/${aid}`, { method: 'DELETE' }) })
   if (ok) await refresh()
@@ -87,17 +94,17 @@ const isImage = (m: string | null) => !!m && m.startsWith('image/')
           <div class="flex flex-col gap-3">
             <h2 class="section-title">Lampiran</h2>
             <div class="flex flex-wrap gap-3">
-              <div v-for="a in data.attachments" :key="a.id" class="relative w-40 rounded-lg border border-line-2 overflow-hidden bg-soft">
-                <a :href="a.url ?? '#'" target="_blank" class="block no-underline">
+              <div v-for="a in data.attachments" :key="a.id" class="relative w-40">
+                <button type="button" class="block w-full text-left rounded-lg border border-line-2 overflow-hidden bg-soft" :aria-label="`Lihat ${a.fileName}`" @click="preview = { url: a.url, name: a.fileName }">
                   <img v-if="isImage(a.mime)" :src="a.url ?? ''" :alt="a.fileName" class="w-full h-24 object-cover">
                   <div v-else class="h-24 flex items-center justify-center text-xs font-bold text-muted uppercase">{{ a.fileName.split('.').pop() }}</div>
                   <span class="block px-2 py-1.5 text-xs truncate text-ink">{{ a.fileName }}</span>
-                </a>
-                <button v-if="a.createdBy === user?.id || can.editAll" type="button" class="absolute top-1 right-1 w-7 h-7 rounded-full bg-white/90 text-danger-700 text-sm" :aria-label="`Hapus ${a.fileName}`" @click="delFile(a.id, a.fileName)">×</button>
+                </button>
+                <button v-if="a.createdBy === user?.id || can.editAll" type="button" class="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full bg-white text-danger-700 border border-line-2 shadow-sm flex items-center justify-center hover:bg-danger-50" :aria-label="`Hapus ${a.fileName}`" @click="delFile(a.id, a.fileName)"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
               </div>
               <label v-if="can.comment" class="w-40 h-[124px] rounded-lg border-2 border-dashed border-line flex items-center justify-center text-sm font-semibold text-brand-700 cursor-pointer hover:bg-soft">
                 {{ uploading ? 'Mengunggah…' : '+ Tambah lampiran' }}
-                <input type="file" class="sr-only" accept="image/*,application/pdf,text/plain" @change="addFile">
+                <input type="file" class="sr-only" multiple accept="image/*,application/pdf,text/plain" @change="addFile">
               </label>
             </div>
           </div>
@@ -141,5 +148,6 @@ const isImage = (m: string | null) => !!m && m.startsWith('image/')
         </section>
       </aside>
     </div>
+    <UiFilePreview :open="!!preview" :url="preview?.url ?? null" :name="preview?.name ?? ''" @close="preview = null" />
   </div>
 </template>

@@ -330,6 +330,11 @@ export const documents = pgTable('documents', {
   type: varchar('jenis', { length: 60 }).notNull(),
   status: varchar('status', { length: 40 }).notNull().default('draf'),
   fileUrl: text('file_url'),
+  /** Isi dokumen yang diedit di aplikasi (dokumen JSON dari editor); null untuk dokumen berupa file. */
+  content: jsonb('isi').$type<Record<string, unknown>>(),
+  docNumber: varchar('nomor', { length: 60 }),
+  /** Salinan kop & footer saat dokumen difinalkan, agar perubahan Pengaturan tidak mengubah dokumen final. */
+  layoutSnapshot: jsonb('tata_letak').$type<DocLayoutSnapshot>(),
   ...audit,
 })
 

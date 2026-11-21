@@ -30,12 +30,20 @@ watch(() => [f.projectId, props.open] as const, async ([pid, o]) => {
   members.value = [{ value: null, label: 'Belum ditugaskan' }, ...users.filter(u => ids.has(u.id) && u.status === 'aktif').map(u => ({ value: u.id, label: u.name }))]
 }, { immediate: true })
 
-async function addFile(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  try { files.value.push(await upload(file, 'bug')) } catch (x) { toast.error(errorMessage(x, (x as Error).message)) }
-  (e.target as HTMLInputElement).value = ''
+async function addFiles(list: File[]) {
+  for (const file of list) {
+    try { files.value.push(await upload(file, 'bug')) } catch (x) { toast.error(errorMessage(x, (x as Error).message)) }
+  }
 }
+async function addFile(e: Event) {
+  const input = e.target as HTMLInputElement
+  await addFiles([...(input.files ?? [])])
+  input.value = ''
+}
+// Ctrl+V gambar (mis. tangkapan layar) saat form terbuka.
+usePasteImages(() => props.open, addFiles)
+const preview = ref<UploadedFile | null>(null)
+const isImage = (m: string | null) => !!m && m.startsWith('image/')
 async function save() {
   err.value = ''
   if (!f.projectId) { err.value = 'Pilih proyek.'; return }
@@ -73,13 +81,24 @@ const sevOpts = (Object.keys(BUG_SEVERITY) as BugSeverity[]).map(k => ({ value: 
     <div class="flex flex-col gap-2">
       <span class="text-sm font-semibold text-ink-2">Lampiran</span>
       <ul v-if="files.length" class="m-0 p-0 list-none flex flex-wrap gap-2">
-        <li v-for="(x, i) in files" :key="x.key" class="flex items-center gap-2 text-xs bg-soft-2 rounded-md px-2 py-1">{{ x.name }}<button type="button" class="text-danger-700" :aria-label="`Hapus ${x.name}`" @click="files.splice(i, 1)">×</button></li>
+        <li v-for="(x, i) in files" :key="x.key" class="relative w-28">
+          <button type="button" class="block w-full text-left rounded-lg border border-line-2 overflow-hidden bg-soft" :aria-label="`Lihat ${x.name}`" @click="preview = x">
+            <img v-if="isImage(x.mime) && x.url" :src="x.url" :alt="x.name" class="w-full h-20 object-cover">
+            <span v-else class="h-20 flex items-center justify-center text-xs font-bold text-muted uppercase">{{ x.name.split('.').pop() }}</span>
+            <span class="block px-2 py-1 text-[11px] truncate">{{ x.name }}</span>
+          </button>
+          <button type="button" class="absolute -top-2 -right-2 z-10 w-6 h-6 rounded-full bg-white text-danger-700 border border-line-2 shadow-sm flex items-center justify-center hover:bg-danger-50" :aria-label="`Hapus ${x.name}`" @click="files.splice(i, 1)"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+        </li>
       </ul>
-      <label class="btn-secondary btn-sm self-start cursor-pointer">{{ uploading ? 'Mengunggah…' : '+ Tambah lampiran' }}<input type="file" class="sr-only" accept="image/*,application/pdf,text/plain" @change="addFile"></label>
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="btn-secondary btn-sm cursor-pointer">{{ uploading ? 'Mengunggah…' : '+ Tambah lampiran' }}<input type="file" class="sr-only" multiple accept="image/*,application/pdf,text/plain" @change="addFile"></label>
+        <span class="text-xs text-muted">atau tempel gambar dengan <kbd class="font-mono">Ctrl</kbd>+<kbd class="font-mono">V</kbd></span>
+      </div>
     </div>
     <template #footer>
       <button type="button" class="btn-secondary" @click="emit('close')">Batal</button>
       <button type="button" class="btn-primary" :disabled="saving || uploading" @click="save">{{ saving ? 'Menyimpan…' : 'Laporkan Bug' }}</button>
     </template>
+    <UiFilePreview :open="!!preview" :url="preview?.url ?? null" :name="preview?.name ?? ''" @close="preview = null" />
   </UiModal>
 </template>

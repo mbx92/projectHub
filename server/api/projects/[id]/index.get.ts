@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const documents = !seeTeam ? [] : (await db.select().from(schema.documents).where(eq(schema.documents.projectId, id)).orderBy(desc(schema.documents.createdAt)))
-    .map(d => ({ ...d, fileUrl: signedFileUrl(d.fileUrl, d.name) }))
+    .map(({ content, layoutSnapshot: _ls, ...d }) => ({ ...d, hasContent: content != null, fileUrl: signedFileUrl(d.fileUrl, d.name) }))
 
   // Aktivitas terbaru: jejak audit proyek/termin/pembayaran + komentar bug.
   const activity = await db.execute(sql`

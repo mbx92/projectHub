@@ -7,6 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!pay) notFound('Pembayaran')
   const data = await loadInvoiceFor(me, pay.invoiceId)
   const pdf = await receiptPdf(data, id)
-  setResponseHeaders(event, { 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename="Kuitansi-${data.invoice.number}-${id}.pdf"`, 'Cache-Control': 'no-store' })
+  const dl = getQuery(event).download === '1'
+  setResponseHeaders(event, { 'Content-Type': 'application/pdf', 'Content-Disposition': `${dl ? 'attachment' : 'inline'}; filename="Kuitansi-${data.invoice.number}-${id}.pdf"`, 'Cache-Control': 'no-store' })
   return pdf
 })

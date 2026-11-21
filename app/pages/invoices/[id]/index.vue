@@ -82,7 +82,7 @@ async function delPayment(pid: number) {
             <div class="flex items-center justify-between gap-2">
               <span class="flex flex-col"><span class="text-sm font-semibold">{{ rupiah(py.amount) }}</span><span class="text-xs text-muted">{{ dateId(py.date) }} · {{ py.method }}</span></span>
               <UiActionMenu :label="`Aksi pembayaran ${dateId(py.date)}`" :items="[
-                { label: 'Unduh kuitansi', href: `/api/payments/${py.id}/receipt`, external: true },
+                { label: 'Unduh kuitansi', href: `/api/payments/${py.id}/receipt?download=1`, external: true },
                 { label: 'Lihat bukti', href: py.proofUrl ?? undefined, external: true, hidden: !py.proofUrl },
                 { label: 'Hapus pembayaran', danger: true, onClick: () => delPayment(py.id) },
               ]" />
@@ -90,7 +90,7 @@ async function delPayment(pid: number) {
           </div>
           <p v-if="!data.payments.length" class="m-0 text-sm text-muted">Belum ada pembayaran.</p>
         </section>
-        <button v-if="(inv.status === 'draf' || inv.status === 'terkirim') && !data.payments.length" type="button" class="btn-ghost text-danger-700 self-start" @click="cancel">Batalkan invoice</button>
+        <button v-if="(inv.status === 'draf' || inv.status === 'terkirim') && !data.payments.length" type="button" class="btn-secondary text-danger-700 border-danger-600 hover:bg-danger-50 self-start" @click="cancel">Batalkan invoice</button>
       </div>
     </div>
     <FinancePaymentModal :open="showPay" :project-id="data.project.id" :term-id="inv.termId" @close="showPay = false" @saved="() => refresh()" />

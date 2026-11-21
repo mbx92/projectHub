@@ -11,7 +11,17 @@ export interface BusinessProfile {
   signatureKey: string | null
   signerName: string
   signerTitle: string
+  /** Footer dokumen proyek. Variabel: {nama}, {nomor}, {proyek}, {tanggal}. Kosong = bawaan. */
+  docFooter: string
 }
+
+/** Kop & footer yang dibekukan pada dokumen Final. */
+export interface DocLayoutSnapshot {
+  business: Pick<BusinessProfile, 'name' | 'npwp' | 'email' | 'whatsapp' | 'address' | 'logoKey' | 'signatureKey' | 'signerName' | 'signerTitle'>
+  footer: string
+}
+
+export const DEFAULT_DOC_FOOTER = '{nama} · {nomor}'
 
 export interface InvoiceSettings {
   /** Pola nomor invoice. Token: [TAHUN], [BULAN], [NOMOR], [NOMOR 3 DIGIT], [NOMOR 4 DIGIT] */
@@ -72,6 +82,7 @@ export const DEFAULT_SETTINGS: { business: BusinessProfile, invoice: InvoiceSett
     signatureKey: null,
     signerName: '',
     signerTitle: '',
+    docFooter: '',
   },
   invoice: {
     numberFormat: 'INV-[TAHUN]-[NOMOR 3 DIGIT]',

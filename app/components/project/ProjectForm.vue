@@ -110,6 +110,21 @@ function toggleInvestor(id: number) {
   else f.investorIds.push(id)
 }
 function addMilestone() { f.milestones.push({ name: '', targetDate: null, status: 'belum' }) }
+
+/** Tahapan umum proyek perangkat lunak: klik untuk menambah tanpa mengetik. */
+const STANDARD_FLOW = ['Analisa kebutuhan', 'Desain sistem & UI/UX', 'Pengembangan', 'Testing & UAT', 'Deployment', 'Serah terima']
+const MILESTONE_SUGGESTIONS = [
+  'Kick-off & kontrak', 'Analisa kebutuhan', 'Desain sistem', 'Desain UI/UX', 'Desain sistem & UI/UX', 'Pengembangan', 'Pengembangan backend', 'Pengembangan frontend',
+  'Integrasi', 'Testing & UAT', 'Revisi', 'Deployment', 'Training pengguna', 'Dokumentasi', 'Serah terima', 'Maintenance',
+]
+const hasMilestone = (name: string) => f.milestones.some(m => m.name.trim().toLowerCase() === name.toLowerCase())
+const suggestions = computed(() => MILESTONE_SUGGESTIONS.filter(n => !hasMilestone(n)))
+function addNamedMilestone(name: string) { f.milestones.push({ name, targetDate: null, status: 'belum' }) }
+function fillStandardFlow() {
+  // Hapus baris kosong, lalu tambahkan tahapan standar yang belum ada (urutan tetap).
+  f.milestones = f.milestones.filter(m => m.name.trim())
+  for (const n of STANDARD_FLOW) if (!hasMilestone(n)) addNamedMilestone(n)
+}
 function onClientFooter(q: string) {
   newClient.value = { name: q, contactName: '', whatsapp: '', email: '' }
   f.clientId = null
@@ -287,15 +302,20 @@ async function remove() {
         </div>
 
         <div class="flex flex-col gap-2">
-          <div v-for="(m, i) in f.members" :key="m.userId" class="rounded-xl border border-line-2 p-3 grid gap-3 sm:grid-cols-[180px_1fr_200px_auto] items-center">
-            <div class="flex items-center gap-2"><UiAvatar :name="userName(m.userId)" :color="userColor(m.userId)" /><span class="text-sm font-semibold">{{ userName(m.userId) }}</span></div>
-            <input v-model="m.roleInProject" type="text" class="input input-sm" aria-label="Peran di proyek" placeholder="Peran di proyek">
-            <UiSelect v-model="m.payType" size="sm" aria-label="Cara pembayaran" :options="[{ value: 'bagi_hasil', label: 'Bagi hasil' }, { value: 'tetap', label: 'Dibayar tetap (biaya proyek)' }]" />
-            <button type="button" class="btn-ghost !min-h-9 !px-2" :aria-label="`Keluarkan ${userName(m.userId)} dari tim`" @click="f.members.splice(i, 1)">
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            </button>
-            <div v-if="m.payType === 'tetap'" class="sm:col-span-4"><UiMoneyInput v-model="m.fixedFee" size="sm" label="Honor tetap" hint="Catat pembayaran honor sebagai pengeluaran proyek (kategori Honor freelancer)." /></div>
-            <label v-else class="sm:col-span-4 flex items-center gap-2 text-xs text-muted">Bobot bagian pekerja <input v-model.number="m.shareWeight" type="number" min="0" max="100" class="input input-sm !w-20"> <span>(sama rata bila semua 1)</span></label>
+          <div v-for="(m, i) in f.members" :key="m.userId" class="rounded-xl border border-line-2 p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0"><UiAvatar :name="userName(m.userId)" :color="userColor(m.userId)" /><span class="text-sm font-semibold truncate">{{ userName(m.userId) }}</span></div>
+              <button type="button" class="btn-ghost !min-h-9 !px-2 shrink-0" :aria-label="`Keluarkan ${userName(m.userId)} dari tim`" @click="f.members.splice(i, 1)">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-3">
+              <label class="field">Peran di proyek<input v-model="m.roleInProject" type="text" class="input input-sm" placeholder="Mis. Frontend developer"></label>
+              <UiSelect v-model="m.payType" size="sm" label="Cara pembayaran" :options="[{ value: 'bagi_hasil', label: 'Bagi hasil' }, { value: 'tetap', label: 'Dibayar tetap' }]" />
+              <UiMoneyInput v-if="m.payType === 'tetap'" v-model="m.fixedFee" size="sm" label="Honor tetap" />
+              <label v-else class="field">Bobot bagi hasil<input v-model.number="m.shareWeight" type="number" min="0" max="100" class="input input-sm"></label>
+            </div>
+            <p class="m-0 text-xs text-muted">{{ m.payType === 'tetap' ? 'Honor dicatat sebagai pengeluaran proyek (kategori Honor freelancer), tidak ikut bagi hasil.' : 'Bobot 1 untuk semua anggota berarti dibagi sama rata.' }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <button v-for="u in addable" :key="u.id" type="button" class="btn-secondary btn-sm" @click="addMember(u.id)">+ {{ u.name }}</button>
@@ -316,7 +336,18 @@ async function remove() {
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
-        <div><button type="button" class="btn-secondary btn-sm" @click="addMilestone">+ Tambah milestone</button></div>
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" class="btn-primary btn-sm" @click="fillStandardFlow">Isi alur standar</button>
+            <button type="button" class="btn-secondary btn-sm" @click="addMilestone">+ Tambah manual</button>
+          </div>
+          <div v-if="suggestions.length" class="flex flex-col gap-1.5">
+            <span class="text-xs text-muted">Atau klik untuk menambah tahapan:</span>
+            <div role="group" aria-label="Tahapan umum" class="flex flex-wrap gap-1.5">
+              <button v-for="n in suggestions" :key="n" type="button" class="min-h-9 px-3 rounded-full border border-line-2 bg-white text-xs font-medium text-ink-2 hover:border-brand-600 hover:text-brand-700" @click="addNamedMilestone(n)">+ {{ n }}</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section v-if="projectId" class="card-pad flex flex-col gap-4 !border-danger-50">

@@ -265,6 +265,10 @@ const INTEGRATIONS = [
             <label class="field">Jabatan<input v-model="biz.signerTitle" class="input" placeholder="Mis. Pendiri"></label>
           </div>
         </div>
+        <div class="flex flex-col gap-3 rounded-xl border border-line-2 p-4">
+          <div class="flex flex-col gap-1"><h3 class="m-0 text-sm font-bold">Kop & footer dokumen proyek</h3><span class="text-xs text-muted">Kop memakai logo, nama, alamat, dan kontak di atas. Footer dipasang di setiap halaman BAST, laporan UAT, dan dokumen lain yang diedit di aplikasi. Dokumen yang sudah Final tidak ikut berubah.</span></div>
+          <label class="field">Teks footer<input v-model="biz.docFooter" class="input" placeholder="{nama} · {nomor}"><span class="hint">Variabel: {nama} · {nomor} · {proyek} · {tanggal}. Kosongkan untuk memakai “{nama} · {nomor}”. Nomor halaman otomatis.</span></label>
+        </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="field">Format nomor invoice<input v-model="inv.numberFormat" class="input"><span class="hint">Token: [TAHUN] [BULAN] [NOMOR 3 DIGIT] · Contoh: {{ numberPreview }}</span></label>
           <UiSelect model-value="IDR" label="Mata uang" :options="[{ value: 'IDR', label: 'Rupiah (IDR)' }]" />
