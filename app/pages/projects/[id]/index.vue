@@ -149,7 +149,7 @@ const DOC_STATUS_LABEL: Record<string, string> = { final: 'Final', review: 'Revi
 const docFile = ref<HTMLInputElement | null>(null)
 function uploadRequired(type: string) { docType.value = type; docFile.value?.click() }
 const preview = ref<{ url: string | null, name: string } | null>(null)
-const AUTO_DOCS = ['BAST', 'Laporan UAT']
+const AUTO_DOCS = ['Kontrak', 'Spesifikasi', 'Laporan UAT', 'BAST']
 const generating = ref<string | null>(null)
 async function generateDoc(type: string) {
   generating.value = type

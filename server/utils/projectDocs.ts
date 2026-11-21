@@ -5,7 +5,7 @@
  */
 import { eq, asc } from 'drizzle-orm'
 
-export const GENERATABLE_DOCS = ['BAST', 'Laporan UAT'] as const
+export const GENERATABLE_DOCS = ['Kontrak', 'Spesifikasi', 'Laporan UAT', 'BAST'] as const
 export type GeneratableDoc = typeof GENERATABLE_DOCS[number]
 
 /** Simpul dokumen editor (subset skema TipTap yang dipakai). */
@@ -19,7 +19,10 @@ async function loadProjectDocData(projectId: number) {
   const [pic] = project.picId ? await db.select({ name: schema.users.name }).from(schema.users).where(eq(schema.users.id, project.picId)) : []
   const milestones = await db.select().from(schema.milestones).where(eq(schema.milestones.projectId, projectId)).orderBy(asc(schema.milestones.sortOrder), asc(schema.milestones.id))
   const bugs = await db.select().from(schema.bugs).where(eq(schema.bugs.projectId, projectId)).orderBy(asc(schema.bugs.id))
-  return { project, client: client ?? null, pic: pic ?? null, milestones, bugs }
+  const terms = await db.select().from(schema.terms).where(eq(schema.terms.projectId, projectId)).orderBy(asc(schema.terms.sortOrder), asc(schema.terms.id))
+  const members = await db.select({ name: schema.users.name, role: schema.projectMembers.roleInProject }).from(schema.projectMembers)
+    .innerJoin(schema.users, eq(schema.users.id, schema.projectMembers.userId)).where(eq(schema.projectMembers.projectId, projectId))
+  return { project, client: client ?? null, pic: pic ?? null, milestones, bugs, terms, members }
 }
 export type ProjectDocData = Awaited<ReturnType<typeof loadProjectDocData>>
 
@@ -48,7 +51,11 @@ const infoTable = (rows: [string, string][]): DocNode => ({
   type: 'table',
   content: rows.map(([k, v]) => ({ type: 'tableRow', content: [cellNode(k, true), cellNode(v)] })),
 })
+const list = (kind: 'bulletList' | 'orderedList', items: string[]): DocNode => ({ type: kind, content: items.map(t => ({ type: 'listItem', content: [p(t)] })) })
+const ul = (items: string[]) => list('bulletList', items)
+const ol = (items: string[]) => list('orderedList', items)
 const doc = (...content: DocNode[]): DocNode => ({ type: 'doc', content })
+const DRAFT_NOTE = 'Catatan: dokumen ini disusun otomatis dari data proyek sebagai draf awal. Ganti isian dalam tanda [ ] dan tinjau seluruh isinya sebelum digunakan. Hapus catatan ini setelah selesai.'
 
 export function bastContent(d: ProjectDocData, business: BusinessProfile, no: string): DocNode {
   const today = todayISO()
@@ -115,14 +122,109 @@ export function uatContent(d: ProjectDocData, no: string): DocNode {
   )
 }
 
+export function kontrakContent(d: ProjectDocData, business: BusinessProfile, no: string): DocNode {
+  const today = todayISO()
+  const start = d.project.startDate ? dateId(d.project.startDate) : '[tanggal mulai]'
+  const end = d.project.targetDate ? dateId(d.project.targetDate) : '[tanggal selesai]'
+  const scope = d.milestones.length ? ol(d.milestones.map(m => m.name)) : p('[Uraikan ruang lingkup pekerjaan]')
+  const termRows = d.terms.map(t => [t.name, percent(t.percent), rupiah(t.amount), t.dueDate ? dateId(t.dueDate) : '—'])
+  return doc(
+    h(1, 'PERJANJIAN KERJA PENGEMBANGAN PERANGKAT LUNAK'),
+    p(`Nomor: ${no}`),
+    p(DRAFT_NOTE),
+    p(`Pada hari ini, ${dateLongId(today)}, kami yang bertanda tangan di bawah ini:`),
+    infoTable([
+      ['Pihak Pertama (penyedia)', business.name],
+      ['Diwakili oleh', [business.signerName, business.signerTitle].filter(Boolean).join(', ') || '[nama dan jabatan]'],
+      ['Alamat', business.address || '[alamat]'],
+    ]),
+    infoTable([
+      ['Pihak Kedua (klien)', d.client?.name ?? '[nama klien]'],
+      ['Diwakili oleh', d.client?.contactName || '[nama dan jabatan]'],
+      ['Alamat', d.client?.address || '[alamat]'],
+    ]),
+    p('Kedua belah pihak sepakat untuk mengikatkan diri dalam perjanjian kerja berikut, dengan ketentuan sebagai berikut.'),
+    h(2, 'Pasal 1 – Ruang Lingkup Pekerjaan'),
+    p(`Pihak Pertama mengerjakan proyek "${d.project.name}"${d.project.stack ? ` dengan teknologi ${d.project.stack}` : ''}, yang meliputi tahapan berikut:`),
+    scope,
+    p('Pekerjaan di luar ruang lingkup di atas dibicarakan dan disepakati tertulis terlebih dahulu, dan dapat dikenakan biaya tambahan.'),
+    h(2, 'Pasal 2 – Jangka Waktu'),
+    p(`Pekerjaan dilaksanakan sejak ${start} sampai dengan ${end}. Perubahan jadwal akibat keterlambatan masukan, materi, atau persetujuan dari Pihak Kedua tidak dihitung sebagai keterlambatan Pihak Pertama.`),
+    h(2, 'Pasal 3 – Nilai Kontrak dan Pembayaran'),
+    p(`Nilai pekerjaan adalah ${rupiah(d.project.contractValue)} (${terbilang(d.project.contractValue)} rupiah). Pembayaran dilakukan bertahap sebagai berikut:`),
+    termRows.length ? table(['Termin', 'Persen', 'Nominal', 'Jatuh tempo'], termRows) : p('[Uraikan jadwal pembayaran]'),
+    p('Pembayaran dilakukan melalui transfer ke rekening Pihak Pertama sesuai invoice yang diterbitkan. Keterlambatan pembayaran dapat menunda pengerjaan tahap berikutnya.'),
+    h(2, 'Pasal 4 – Kewajiban Pihak Pertama'),
+    ul(['Mengerjakan pekerjaan sesuai ruang lingkup, jadwal, dan standar mutu yang wajar.', 'Memberi laporan kemajuan pekerjaan secara berkala.', 'Menyerahkan hasil pekerjaan dan dokumentasi yang disepakati pada saat serah terima.']),
+    h(2, 'Pasal 5 – Kewajiban Pihak Kedua'),
+    ul(['Menyediakan data, materi, akses, dan masukan yang dibutuhkan tepat waktu.', 'Memberi persetujuan atau umpan balik atas hasil pekerjaan dalam waktu yang wajar.', 'Melakukan pembayaran sesuai Pasal 3.']),
+    h(2, 'Pasal 6 – Revisi dan Perubahan'),
+    p('Revisi kecil dalam ruang lingkup yang disepakati termasuk dalam nilai kontrak sebanyak [jumlah] kali putaran. Perubahan atau penambahan fitur di luar ruang lingkup diperlakukan sebagai pekerjaan tambahan.'),
+    h(2, 'Pasal 7 – Serah Terima dan Garansi'),
+    p('Penyerahan hasil pekerjaan dibuktikan dengan Berita Acara Serah Terima. Pihak Pertama memberi garansi perbaikan kesalahan (bug) selama [jumlah] hari sejak serah terima tanpa biaya tambahan. Garansi tidak mencakup perubahan fitur baru atau kerusakan akibat perubahan pihak lain.'),
+    h(2, 'Pasal 8 – Hak Kekayaan Intelektual'),
+    p('Hak atas kode sumber dan hasil pekerjaan khusus untuk proyek ini beralih kepada Pihak Kedua setelah seluruh pembayaran dilunasi. Pihak Pertama tetap berhak atas pustaka, perangkat, dan komponen umum yang dimilikinya sebelum atau di luar proyek ini. [Sesuaikan bila berbeda.]'),
+    h(2, 'Pasal 9 – Kerahasiaan'),
+    p('Kedua belah pihak menjaga kerahasiaan informasi yang diperoleh selama pelaksanaan perjanjian dan tidak mengungkapkannya kepada pihak ketiga tanpa persetujuan tertulis, kecuali diwajibkan oleh hukum.'),
+    h(2, 'Pasal 10 – Pengakhiran Perjanjian'),
+    p('Perjanjian dapat diakhiri atas kesepakatan bersama, atau oleh salah satu pihak bila pihak lain melanggar ketentuan secara material dan tidak memperbaikinya dalam [jumlah] hari setelah diberi peringatan tertulis. Pekerjaan yang telah dilaksanakan hingga saat pengakhiran tetap dibayar secara proporsional.'),
+    h(2, 'Pasal 11 – Penyelesaian Perselisihan'),
+    p('Perselisihan diselesaikan secara musyawarah untuk mufakat. Bila tidak tercapai, kedua pihak memilih penyelesaian melalui [pengadilan/lembaga yang disepakati] di [kota].'),
+    h(2, 'Pasal 12 – Penutup'),
+    p('Perjanjian ini dibuat dalam dua rangkap bermeterai cukup, masing-masing mempunyai kekuatan hukum yang sama, dan mulai berlaku sejak ditandatangani oleh kedua belah pihak.'),
+  )
+}
+
+export function spesifikasiContent(d: ProjectDocData, no: string): DocNode {
+  const period = [d.project.startDate ? dateId(d.project.startDate) : null, d.project.targetDate ? dateId(d.project.targetDate) : null].filter(Boolean).join(' – ') || '—'
+  return doc(
+    h(1, 'DOKUMEN SPESIFIKASI KEBUTUHAN'),
+    p(`Nomor: ${no}`),
+    p(DRAFT_NOTE),
+    infoTable([
+      ['Proyek', d.project.name],
+      ['Klien', d.client?.name ?? '—'],
+      ['Teknologi', d.project.stack || '[teknologi]'],
+      ['Periode', period],
+      ['Penanggung jawab', d.pic?.name ?? '—'],
+      ['Tanggal dokumen', dateLongId(todayISO())],
+      ['Versi', '1.0'],
+    ]),
+    h(2, '1. Latar Belakang dan Tujuan'),
+    p(d.project.description?.trim() || '[Jelaskan latar belakang proyek dan masalah yang ingin diselesaikan.]'),
+    p('Tujuan: [tuliskan tujuan yang ingin dicapai].'),
+    h(2, '2. Ruang Lingkup'),
+    p('Pekerjaan yang termasuk dalam proyek ini:'),
+    d.milestones.length ? ul(d.milestones.map(m => m.name)) : p('[Uraikan ruang lingkup pekerjaan]'),
+    p('Di luar ruang lingkup: [tuliskan hal yang tidak termasuk].'),
+    h(2, '3. Pengguna dan Peran'),
+    table(['Peran pengguna', 'Deskripsi', 'Hak akses utama'], [['[Mis. Admin]', '[Deskripsi]', '[Hak akses]'], ['[Mis. Operator]', '[Deskripsi]', '[Hak akses]']]),
+    h(2, '4. Kebutuhan Fungsional'),
+    table(['Kode', 'Modul / fitur', 'Deskripsi kebutuhan', 'Prioritas'], [['FR-01', '[Modul]', '[Apa yang harus bisa dilakukan sistem]', 'Tinggi'], ['FR-02', '[Modul]', '[Deskripsi]', 'Sedang'], ['FR-03', '[Modul]', '[Deskripsi]', 'Rendah']]),
+    h(2, '5. Kebutuhan Non-Fungsional'),
+    ul(['Kinerja: [mis. halaman utama termuat di bawah 3 detik].', 'Keamanan: [mis. login berbasis peran, data tersimpan terenkripsi].', 'Kompatibilitas: [mis. browser dan perangkat yang didukung].', 'Ketersediaan dan pencadangan: [mis. cadangan harian].']),
+    h(2, '6. Jadwal Pengerjaan'),
+    d.milestones.length
+      ? table(['No', 'Tahapan', 'Target'], d.milestones.map((m, i) => [String(i + 1), m.name, m.targetDate ? dateId(m.targetDate) : '—']))
+      : p('[Uraikan jadwal pengerjaan]'),
+    h(2, '7. Tim Proyek'),
+    d.members.length ? table(['Nama', 'Peran'], d.members.map(m => [m.name, m.role || '—'])) : p('[Daftar tim proyek]'),
+    h(2, '8. Asumsi dan Batasan'),
+    ul(['[Asumsi 1]', '[Batasan 1]']),
+    h(2, '9. Kriteria Penerimaan'),
+    ul(['Seluruh kebutuhan fungsional berprioritas tinggi berfungsi sesuai spesifikasi.', 'Tidak ada temuan UAT berkeparahan kritis atau tinggi yang belum diselesaikan.', 'Hasil pekerjaan diserahterimakan melalui Berita Acara Serah Terima.']),
+  )
+}
+
 /** Buat dokumen otomatis dari data proyek; tersimpan sebagai Draf dan langsung bisa diedit. */
 export async function generateProjectDoc(projectId: number, type: GeneratableDoc, userId: number) {
   const d = await loadProjectDocData(projectId)
   const business = await getSetting('business')
   const year = todayISO().slice(0, 4)
   const existing = await useDB().select({ id: schema.documents.id }).from(schema.documents).where(eq(schema.documents.projectId, projectId))
-  const no = `${type === 'BAST' ? 'BAST' : 'UAT'}/${projectId}/${year}-${existing.length + 1}`
-  const content = type === 'BAST' ? bastContent(d, business, no) : uatContent(d, no)
+  const prefix = { BAST: 'BAST', 'Laporan UAT': 'UAT', Kontrak: 'KTR', Spesifikasi: 'SPK' }[type]
+  const no = `${prefix}/${projectId}/${year}-${existing.length + 1}`
+  const content = type === 'BAST' ? bastContent(d, business, no) : type === 'Laporan UAT' ? uatContent(d, no) : type === 'Kontrak' ? kontrakContent(d, business, no) : spesifikasiContent(d, no)
   const name = `${type} - ${d.project.name} (${dateId(todayISO())})`.slice(0, 200)
   const [row] = await useDB().insert(schema.documents).values({ projectId, name, type, status: 'draf', content: content as unknown as Record<string, unknown>, docNumber: no, createdBy: userId }).returning()
   return { row: row!, projectName: d.project.name }

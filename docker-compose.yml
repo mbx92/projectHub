@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      # Dipaksa ke volume permanen. Jangan isi NUXT_STORAGE_DIR di Coolify; nilai ./storage dari .env.example membuat upload hilang tiap deploy.
+      NUXT_STORAGE_DIR: /data/storage
       NUXT_SESSION_SECRET: ${NUXT_SESSION_SECRET}
       NUXT_FILE_SECRET: ${NUXT_FILE_SECRET}
       NUXT_APP_URL: ${NUXT_APP_URL}

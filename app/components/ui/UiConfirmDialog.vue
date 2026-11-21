@@ -69,12 +69,14 @@ function trap(e: KeyboardEvent) {
         aria-describedby="confirm-msg"
         class="relative w-full max-w-[440px] bg-white rounded-2xl shadow-2xl p-6 flex flex-col gap-4"
       >
-        <span class="w-11 h-11 rounded-full flex items-center justify-center" :style="{ background: v.bg, color: v.fg }">
-          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="v.path" /></svg>
-        </span>
-        <div class="flex flex-col gap-1.5">
-          <h2 id="confirm-title" class="m-0 text-lg font-bold">{{ state.title }}</h2>
-          <p v-if="state.message" id="confirm-msg" class="m-0 text-sm text-muted leading-relaxed whitespace-pre-line">{{ state.message }}</p>
+        <div class="flex items-start gap-4">
+          <span class="w-11 h-11 shrink-0 rounded-full flex items-center justify-center" :style="{ background: v.bg, color: v.fg }">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path :d="v.path" /></svg>
+          </span>
+          <div class="flex flex-col gap-1 min-w-0 flex-1">
+            <h2 id="confirm-title" class="m-0 min-h-11 flex items-center text-lg font-bold leading-snug">{{ state.title }}</h2>
+            <p v-if="state.message" id="confirm-msg" class="m-0 text-sm text-muted leading-relaxed whitespace-pre-line">{{ state.message }}</p>
+          </div>
         </div>
         <label v-if="state.requireText" class="field">
           <span class="font-normal text-muted">Ketik <code class="font-semibold text-ink bg-soft-2 px-1.5 py-0.5 rounded">{{ state.requireText }}</code> untuk konfirmasi</span>

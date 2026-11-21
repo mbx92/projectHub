@@ -54,7 +54,7 @@ async function setStatus(status: 'draf' | 'final') {
 }
 
 // Peringatkan bila ada perubahan yang belum disimpan.
-onBeforeRouteLeave(() => (dirty.value ? window.confirm('Ada perubahan yang belum disimpan. Tinggalkan halaman ini?') : true))
+onBeforeRouteLeave(async () => !dirty.value || await confirm({ variant: 'warning', title: 'Tinggalkan halaman ini?', message: 'Ada perubahan yang belum disimpan dan akan hilang bila Anda keluar.', confirmText: 'Tinggalkan', cancelText: 'Tetap di sini' }))
 function warnUnload(e: BeforeUnloadEvent) { if (dirty.value) e.preventDefault() }
 onMounted(() => window.addEventListener('beforeunload', warnUnload))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnload))
@@ -82,45 +82,45 @@ const biz = computed(() => doc.value.layout.business)
 
     <label v-if="canEdit" class="field max-w-xl">Nama dokumen<input v-model="name" class="input" maxlength="200"></label>
 
-    <article class="card mx-auto w-full max-w-[820px] p-5 sm:p-10 flex flex-col gap-5 shadow-sm bg-white" :aria-label="`Dokumen ${doc.name}`">
-      <!-- Kop (otomatis dari Pengaturan, tidak diedit di sini) -->
-      <header class="flex flex-wrap items-start justify-between gap-3 pb-4 border-b-2 border-brand-600">
-        <div class="flex items-start gap-3 min-w-0">
-          <img v-if="biz.logoUrl" :src="biz.logoUrl" alt="" class="w-10 h-10 rounded-lg object-contain shrink-0">
-          <div v-else class="w-10 h-10 rounded-lg bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">OCN</div>
-          <div class="flex flex-col gap-0.5 min-w-0">
-            <span class="font-bold text-sm">{{ biz.name }}</span>
-            <span class="text-xs text-muted whitespace-pre-line">{{ biz.address || '[Alamat usaha]' }}</span>
-            <span v-if="biz.email || biz.whatsapp" class="text-xs text-muted">{{ [biz.email, biz.whatsapp].filter(Boolean).join(' · ') }}</span>
-            <span v-if="biz.npwp" class="text-xs text-muted">NPWP {{ biz.npwp }}</span>
+    <ClientOnly>
+      <DocEditor :model-value="content" :editable="canEdit" :label="`Dokumen ${doc.name}`" :dirty="dirty" :saving="saving" @update:model-value="onContent" @save="save()">
+        <template #header>
+          <!-- Kop (otomatis dari Pengaturan, tidak diedit di sini) -->
+          <header class="flex flex-wrap items-start justify-between gap-3 pb-4 border-b-2 border-brand-600">
+            <div class="flex items-start gap-3 min-w-0">
+              <img v-if="biz.logoUrl" :src="biz.logoUrl" alt="" class="w-10 h-10 rounded-lg object-contain shrink-0">
+              <div v-else class="w-10 h-10 rounded-lg bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">OCN</div>
+              <div class="flex flex-col gap-0.5 min-w-0">
+                <span class="font-bold text-sm">{{ biz.name }}</span>
+                <span class="text-xs text-muted whitespace-pre-line">{{ biz.address || '[Alamat usaha]' }}</span>
+                <span v-if="biz.email || biz.whatsapp" class="text-xs text-muted">{{ [biz.email, biz.whatsapp].filter(Boolean).join(' · ') }}</span>
+                <span v-if="biz.npwp" class="text-xs text-muted">NPWP {{ biz.npwp }}</span>
+              </div>
+            </div>
+            <span v-if="doc.docNumber" class="text-xs text-muted">{{ doc.docNumber }}</span>
+          </header>
+        </template>
+        <template #footer>
+          <!-- Tanda tangan (otomatis) -->
+          <div class="grid grid-cols-2 gap-6 pt-4">
+            <div class="flex flex-col items-center gap-1 text-center">
+              <span class="text-xs text-muted">Pihak Pertama</span>
+              <img v-if="biz.signatureUrl" :src="biz.signatureUrl" alt="Tanda tangan usaha" class="h-14 object-contain">
+              <span v-else class="h-14" />
+              <span class="w-full border-t border-line-2 pt-1 text-sm font-semibold">{{ biz.signerName || biz.name }}</span>
+              <span v-if="biz.signerTitle" class="text-xs text-muted">{{ biz.signerTitle }}</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-center">
+              <span class="text-xs text-muted">Pihak Kedua (Klien)</span>
+              <span class="h-14" />
+              <span class="w-full border-t border-line-2 pt-1 text-sm font-semibold">{{ doc.clientName || ' ' }}</span>
+            </div>
           </div>
-        </div>
-        <span v-if="doc.docNumber" class="text-xs text-muted">{{ doc.docNumber }}</span>
-      </header>
-
-      <ClientOnly>
-        <DocEditor :model-value="content" :editable="canEdit" @update:model-value="onContent" />
-        <template #fallback><p class="m-0 text-sm text-muted">Memuat editor…</p></template>
-      </ClientOnly>
-
-      <!-- Tanda tangan (otomatis) -->
-      <div class="grid grid-cols-2 gap-6 pt-4">
-        <div class="flex flex-col items-center gap-1 text-center">
-          <span class="text-xs text-muted">Pihak Pertama</span>
-          <img v-if="biz.signatureUrl" :src="biz.signatureUrl" alt="Tanda tangan usaha" class="h-14 object-contain">
-          <span v-else class="h-14" />
-          <span class="w-full border-t border-line-2 pt-1 text-sm font-semibold">{{ biz.signerName || biz.name }}</span>
-          <span v-if="biz.signerTitle" class="text-xs text-muted">{{ biz.signerTitle }}</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 text-center">
-          <span class="text-xs text-muted">Pihak Kedua (Klien)</span>
-          <span class="h-14" />
-          <span class="w-full border-t border-line-2 pt-1 text-sm font-semibold">{{ doc.clientName || ' ' }}</span>
-        </div>
-      </div>
-
-      <!-- Footer (otomatis) -->
-      <footer class="flex justify-between gap-3 pt-3 border-t border-line-3 text-[11px] text-muted"><span>{{ doc.layout.footer }}</span><span>Nomor halaman otomatis</span></footer>
-    </article>
+          <!-- Footer (otomatis) -->
+          <footer class="flex justify-between gap-3 pt-3 border-t border-line-3 text-[11px] text-muted"><span>{{ doc.layout.footer }}</span><span>Nomor halaman otomatis</span></footer>
+        </template>
+      </DocEditor>
+      <template #fallback><p class="m-0 text-sm text-muted text-center">Memuat editor…</p></template>
+    </ClientOnly>
   </div>
 </template>
