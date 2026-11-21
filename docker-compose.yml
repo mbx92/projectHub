@@ -1,0 +1,24 @@
+# Dipakai Coolify (Docker Compose) atau lokal: `docker compose up --build`.
+# Database memakai server PostgreSQL yang sudah ada (DATABASE_URL), tidak ada container database.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NUXT_SESSION_SECRET: ${NUXT_SESSION_SECRET}
+      NUXT_FILE_SECRET: ${NUXT_FILE_SECRET}
+      NUXT_APP_URL: ${NUXT_APP_URL}
+      NUXT_SMTP_HOST: ${NUXT_SMTP_HOST:-}
+      NUXT_SMTP_PORT: ${NUXT_SMTP_PORT:-587}
+      NUXT_SMTP_USER: ${NUXT_SMTP_USER:-}
+      NUXT_SMTP_PASS: ${NUXT_SMTP_PASS:-}
+      NUXT_SMTP_FROM: ${NUXT_SMTP_FROM:-OCN Project Hub <no-reply@example.com>}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+    volumes:
+      - storage:/data/storage
+    expose:
+      - "3000"
+volumes:
+  storage:

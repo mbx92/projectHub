@@ -37,6 +37,9 @@ export default defineEventHandler(async (event) => {
   if (bug.severity === 'kritis') {
     await notifyUsers(await adminIds(), { type: 'bug_kritis', title: `Bug kritis ${bug.code}: ${bug.title}`, body: `Proyek ${project?.name}${bug.blocksTerm ? ' · menghambat termin' : ''}`, link: `/bugs/${bug.id}` }, me.id)
   }
+  else {
+    await notifyUsers(await adminIds(), { type: 'bug_baru', title: `Bug baru ${bug.code}: ${bug.title}`, body: `Proyek ${project?.name} · keparahan ${BUG_SEVERITY[bug.severity].label}`, link: `/bugs/${bug.id}` }, me.id)
+  }
   if (assigneeId) {
     await notifyUsers([assigneeId], { type: 'bug_ditugaskan', title: `${bug.code} ditugaskan ke Anda`, body: `${bug.title} · ${project?.name}`, link: `/bugs/${bug.id}` }, me.id)
   }

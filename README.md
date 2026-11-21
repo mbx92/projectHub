@@ -77,3 +77,12 @@ Isinya: 5 proyek (BUMDes, POS Resto, Klinik Pratama, Absensi Desa, Website Compa
 ## Fase 2 (belum dibangun)
 
 WhatsApp & Telegram, Google Drive, API key & webhook, ringkasan harian — tampil sebagai "Fase 2" di Pengaturan › Integrasi.
+
+## Deploy di Coolify
+
+Repo ini siap deploy lewat `Dockerfile` atau `docker-compose.yml` (hanya aplikasi; PostgreSQL memakai server yang sudah ada).
+
+1. Coolify → New Resource → pilih repo ini, build pack **Docker Compose** (atau **Dockerfile**). Database memakai server PostgreSQL yang sudah ada, tidak ada container database.
+2. Isi environment variable (lihat `.env.example`): `DATABASE_URL` (server DB yang sama), `NUXT_SESSION_SECRET`, `NUXT_FILE_SECRET`, `NUXT_APP_URL` (URL domain https), `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, serta SMTP bila perlu.
+3. Pasang domain pada service `app` (port 3000). Health check: `/api/health`.
+4. Saat start, container otomatis menjalankan migrasi dan seed dasar (idempotent), lalu server. File unggahan tersimpan di volume `/data/storage`; cadangkan volume ini beserta database.

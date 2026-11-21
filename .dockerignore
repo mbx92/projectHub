@@ -1,0 +1,10 @@
+node_modules
+.nuxt
+.output
+.git
+.claude
+.env
+storage
+backups
+docs
+*.log

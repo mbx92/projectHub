@@ -27,7 +27,13 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const [before] = await useDB().select({ status: schema.projects.status }).from(schema.projects).where(eq(schema.projects.id, projectId))
   const { id, newMemberIds } = await saveProject(me, input, projectId)
   await notifyUsers(newMemberIds, { type: 'bug_ditugaskan', title: `Anda ditambahkan ke proyek ${input.name}`, body: 'Anda sekarang bisa melihat proyek dan bug yang ditugaskan.', link: `/projects/${id}`, email: false }, me.id)
+  if (before && input.status !== before.status) {
+    const newcomers = new Set(newMemberIds)
+    const team = (await projectTeamIds(id)).filter(u => !newcomers.has(u))
+    await notifyUsers(team, { type: 'status_proyek', title: `Status ${input.name} berubah`, body: `${PROJECT_STATUS[before.status].label} → ${PROJECT_STATUS[input.status].label}`, link: `/projects/${id}`, email: false }, me.id)
+  }
   return { id }
 })

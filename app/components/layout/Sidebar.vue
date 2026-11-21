@@ -1,10 +1,12 @@
 <script setup lang="ts">
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
-const { can } = useAuth()
+const { can, role } = useAuth()
 const route = useRoute()
 
 const ALL = [
+  { label: 'Dashboard Developer', to: '/developer', show: () => role.value === 'developer', icon: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z' },
+  { label: 'Tugas Saya', to: '/tugas', show: () => role.value === 'developer' && can('bug', 'lihat'), icon: 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h9' },
   { label: 'Dashboard Investor', to: '/', show: () => can('laporan', 'lihat'), icon: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z' },
   { label: 'Proyek', to: '/projects', show: () => can('proyek', 'lihat'), icon: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
   { label: 'Pembayaran', to: '/payments', show: () => can('keuangan', 'lihat'), icon: 'M3 7h18v12H3zM3 7l2-3h12l2 3M16 13h2' },

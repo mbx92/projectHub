@@ -35,6 +35,14 @@ export async function notifyUsers(userIds: (number | null | undefined)[], input:
   }
 }
 
+/** Anggota tim + penanggung jawab sebuah proyek (untuk notifikasi proyek). */
+export async function projectTeamIds(projectId: number): Promise<number[]> {
+  const db = useDB()
+  const [p] = await db.select({ picId: schema.projects.picId }).from(schema.projects).where(eq(schema.projects.id, projectId))
+  const members = await db.select({ id: schema.projectMembers.userId }).from(schema.projectMembers).where(eq(schema.projectMembers.projectId, projectId))
+  return [...members.map(m => m.id), p?.picId ?? null].filter((x): x is number => !!x)
+}
+
 export async function adminIds(): Promise<number[]> {
   const rows = await useDB().select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.role, 'admin'))
   return rows.map(r => r.id)

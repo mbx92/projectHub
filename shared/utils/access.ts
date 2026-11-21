@@ -111,6 +111,7 @@ export function accessLabel<M extends AccessModule>(module: M, level: AccessLeve
 /** Halaman awal sesuai hak akses. */
 export function homePathFor(role: Role, access: RoleAccess): string {
   if (role === 'investor' && hasAccess(access, 'laporan', 'lihat')) return '/'
+  if (role === 'developer') return '/developer'
   if (hasAccess(access, 'proyek', 'lihat')) return '/projects'
   if (hasAccess(access, 'laporan', 'lihat')) return '/'
   if (hasAccess(access, 'bug', 'lihat')) return '/bugs'
