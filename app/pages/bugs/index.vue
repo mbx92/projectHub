@@ -116,7 +116,7 @@ const showBug = ref(route.query.lapor === '1')
       @dragleave="(e: DragEvent) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) overCol = null }"
       @drop.prevent="onDrop($event, col.key)"
     >
-      <h2 class="m-0 flex items-center justify-between text-sm font-bold px-1 py-1 sticky -top-3 -mt-3 pt-3 z-10 bg-soft-2 rounded-t-xl">
+      <h2 class="m-0 shrink-0 flex items-center justify-between text-sm font-bold px-1 py-1 sticky -top-3 -mt-3 pt-3 z-10 bg-soft-2 rounded-t-xl">
         <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" :style="{ background: col.dot }" />{{ col.name }}</span>
         <span class="text-xs font-semibold text-muted bg-white rounded-full px-2 py-0.5">{{ col.items.length }}</span>
       </h2>
@@ -124,7 +124,7 @@ const showBug = ref(route.query.lapor === '1')
         v-for="b in col.items"
         :key="b.id"
         draggable="true"
-        class="min-w-0 overflow-hidden bg-white rounded-lg border border-line-2 p-3 flex flex-col gap-2 shadow-xs cursor-grab active:cursor-grabbing"
+        class="shrink-0 min-w-0 overflow-hidden bg-white rounded-lg border border-line-2 p-3 flex flex-col gap-2 shadow-xs cursor-grab active:cursor-grabbing"
         :class="dragging === b.id && 'opacity-50'"
         @dragstart="onDragStart($event, b.id)"
         @dragend="dragging = null; overCol = null"
