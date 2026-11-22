@@ -110,13 +110,13 @@ const showBug = ref(route.query.lapor === '1')
       v-for="col in columns"
       :key="col.key"
       :aria-label="col.name"
-      class="min-w-0 rounded-xl bg-soft-2 p-3 flex flex-col gap-3 min-h-40 transition"
+      class="min-w-0 rounded-xl bg-soft-2 p-3 flex flex-col gap-3 min-h-40 max-h-[calc(100vh-14rem)] overflow-y-auto overscroll-contain transition"
       :class="overCol === col.key && 'ring-2 ring-brand-600 bg-brand-soft'"
       @dragover.prevent="onDragOver($event, col.key)"
       @dragleave="(e: DragEvent) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) overCol = null }"
       @drop.prevent="onDrop($event, col.key)"
     >
-      <h2 class="m-0 flex items-center justify-between text-sm font-bold px-1">
+      <h2 class="m-0 flex items-center justify-between text-sm font-bold px-1 py-1 sticky -top-3 -mt-3 pt-3 z-10 bg-soft-2 rounded-t-xl">
         <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" :style="{ background: col.dot }" />{{ col.name }}</span>
         <span class="text-xs font-semibold text-muted bg-white rounded-full px-2 py-0.5">{{ col.items.length }}</span>
       </h2>
