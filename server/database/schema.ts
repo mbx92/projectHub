@@ -293,6 +293,8 @@ export const bugs = pgTable('bugs', {
   expected: text('seharusnya'),
   actual: text('kenyataan'),
   module: varchar('modul', { length: 80 }),
+  /** Daftar centang: [{ text, done }] */
+  checklist: jsonb('checklist').$type<{ text: string, done: boolean }[]>().notNull().default([]),
   severity: bugSeverityEnum('keparahan').notNull().default('sedang'),
   status: bugStatusEnum('status').notNull().default('open'),
   assigneeId: integer('assignee_id').references(() => users.id, { onDelete: 'set null' }),

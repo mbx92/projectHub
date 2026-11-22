@@ -51,6 +51,13 @@
   :focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
   button { cursor: pointer; }
   button:disabled { cursor: not-allowed; }
+
+  /* Scrollbar mengikuti warna tema */
+  * { scrollbar-width: thin; scrollbar-color: var(--color-brand-200) transparent; }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--color-brand-200); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--color-brand-600); background-clip: content-box; }
 }
 
 /* Tombol — tinggi minimal 44px (target sentuh) */

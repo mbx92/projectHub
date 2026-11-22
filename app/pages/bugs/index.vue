@@ -135,6 +135,10 @@ const showBug = ref(route.query.lapor === '1')
         </div>
         <span v-if="!projectId" class="block truncate text-xs font-medium text-info-700" :title="b.projectName">{{ b.projectName }}</span>
         <NuxtLink :to="`/bugs/${b.id}`" class="text-sm font-semibold !text-ink hover:!text-brand-700 leading-snug break-words">{{ b.title }}</NuxtLink>
+        <div v-if="b.checkTotal" class="flex items-center gap-2 text-xs text-muted" :title="`${b.checkDone} dari ${b.checkTotal} item selesai`">
+          <div class="progress flex-1"><div :style="{ width: `${Math.round(b.checkDone / b.checkTotal * 100)}%` }" /></div>
+          <span class="font-semibold tabular-nums">{{ b.checkDone }}/{{ b.checkTotal }}</span>
+        </div>
         <div v-if="b.module || (b.blocksTerm && b.status !== 'selesai')" class="flex flex-wrap gap-1.5 min-w-0">
           <span v-if="b.module" class="badge bg-soft-2 text-ink-2 !py-0.5 max-w-full" :title="b.module"><span class="truncate">{{ b.module }}</span></span>
           <span v-if="b.blocksTerm && b.status !== 'selesai'" class="badge bg-warning-50 text-warning-700 !py-0.5">menghambat termin</span>

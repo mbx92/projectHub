@@ -28,6 +28,30 @@ async function onStatus(s: BugStatus) {
   await patch({ status: s }, `Status → ${BUG_STATUS[s].label}`)
 }
 
+// ── Checklist ──
+const items = computed(() => bug.value.checklist ?? [])
+const doneCount = computed(() => items.value.filter(i => i.done).length)
+const canCheck = computed(() => can.value.editAll || can.value.changeStatus)
+const newItem = ref('')
+async function saveChecklist(next: { text: string, done: boolean }[]) {
+  try { await $fetch<unknown>(`/api/bugs/${id}`, { method: 'PATCH', body: { checklist: next } }) } catch (e) { toast.error(errorMessage(e)) }
+  await refresh()
+}
+const toggleItem = (i: number) => saveChecklist(items.value.map((x, k) => k === i ? { ...x, done: !x.done } : x))
+const removeItem = (i: number) => saveChecklist(items.value.filter((_, k) => k !== i))
+async function addItem() {
+  const t = newItem.value.trim()
+  if (!t) return
+  newItem.value = ''
+  await saveChecklist([...items.value, { text: t, done: false }])
+}
+/** Baris deskripsi (mis. "1. ...") dijadikan item checklist. */
+const descLines = computed(() => (bug.value.description ?? '').split(/\r?\n/).map(s => s.replace(/^\s*(\d+[.)]|[-*•])\s*/, '').trim()).filter(Boolean))
+async function descToChecklist() {
+  const ok = await confirm({ variant: 'info', title: `Jadikan ${descLines.value.length} baris deskripsi sebagai checklist?`, message: 'Setiap baris menjadi satu item dan deskripsi dikosongkan.', confirmText: 'Jadikan checklist', action: () => $fetch<unknown>(`/api/bugs/${id}`, { method: 'PATCH', body: { checklist: [...items.value, ...descLines.value.map(text => ({ text: text.slice(0, 300), done: false }))], description: '' } }) })
+  if (ok) await refresh()
+}
+
 const draft = ref('')
 const sending = ref(false)
 async function sendComment() {
@@ -80,7 +104,31 @@ const isImage = (m: string | null) => !!m && m.startsWith('image/')
     <div class="grid gap-6 lg:grid-cols-[1fr_320px] items-start">
       <div class="flex flex-col gap-6 min-w-0">
         <section class="card-pad flex flex-col gap-5">
-          <div v-if="bug.description" class="flex flex-col gap-2"><h2 class="section-title">Deskripsi</h2><p class="m-0 text-sm leading-relaxed whitespace-pre-line">{{ bug.description }}</p></div>
+          <div v-if="bug.description" class="flex flex-col gap-2">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="section-title">Deskripsi</h2>
+              <button v-if="can.editAll && descLines.length > 1" type="button" class="btn-secondary btn-sm" @click="descToChecklist">Jadikan checklist</button>
+            </div>
+            <p class="m-0 text-sm leading-relaxed whitespace-pre-line">{{ bug.description }}</p>
+          </div>
+          <div v-if="items.length || canCheck" class="flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="section-title">Checklist</h2>
+              <span v-if="items.length" class="text-xs font-semibold text-muted tabular-nums">{{ doneCount }}/{{ items.length }} selesai</span>
+            </div>
+            <div v-if="items.length" class="progress"><div :style="{ width: `${Math.round(doneCount / items.length * 100)}%` }" /></div>
+            <ul class="m-0 p-0 list-none flex flex-col">
+              <li v-for="(it, i) in items" :key="i" class="group flex items-start gap-3 py-2 border-b border-line-3 last:border-0">
+                <input type="checkbox" class="w-[18px] h-[18px] mt-0.5 accent-brand-600 shrink-0" :checked="it.done" :disabled="!canCheck" :aria-label="it.text" @change="toggleItem(i)">
+                <span class="text-sm leading-relaxed flex-1 min-w-0 break-words" :class="it.done && 'line-through text-muted'">{{ it.text }}</span>
+                <button v-if="can.editAll" type="button" class="text-xs text-danger-700 opacity-0 group-hover:opacity-100 focus:opacity-100 min-h-8" :aria-label="`Hapus ${it.text}`" @click="removeItem(i)">Hapus</button>
+              </li>
+            </ul>
+            <form v-if="canCheck" class="flex gap-2" @submit.prevent="addItem">
+              <input v-model="newItem" class="input flex-1" placeholder="Tambah item checklist…" maxlength="300" aria-label="Item checklist baru">
+              <button type="submit" class="btn-secondary" :disabled="!newItem.trim()">Tambah</button>
+            </form>
+          </div>
           <div v-if="steps.length" class="flex flex-col gap-2">
             <h2 class="section-title">Langkah reproduksi</h2>
             <ol class="m-0 pl-5 list-decimal flex flex-col gap-1.5 text-sm"><li v-for="(s, i) in steps" :key="i">{{ s }}</li></ol>

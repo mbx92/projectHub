@@ -19,13 +19,14 @@ export default defineEventHandler(async (event) => {
     expected: zOptText(2000).optional(),
     actual: zOptText(2000).optional(),
     module: zOptText(80).optional(),
+    checklist: z.array(z.object({ text: z.string().trim().min(1).max(300), done: z.boolean() })).max(100).optional(),
   }))
   const isAdmin = can(me, 'bug', 'kelola')
   if (!isAdmin) {
     if (bug.assigneeId !== me.id) throw createError({ statusCode: 403, statusMessage: 'Anda hanya bisa mengubah bug yang ditugaskan kepada Anda.' })
-    const allowed = ['status']
+    const allowed = ['status', 'checklist']
     const extra = Object.keys(body).filter(k => !allowed.includes(k))
-    if (extra.length) throw createError({ statusCode: 403, statusMessage: 'Anda hanya bisa mengubah status bug yang ditugaskan.' })
+    if (extra.length) throw createError({ statusCode: 403, statusMessage: 'Anda hanya bisa mengubah status dan checklist bug yang ditugaskan.' })
     if (body.status === 'selesai') throw createError({ statusCode: 403, statusMessage: 'Pindahkan ke Review; pengelola bug yang menandai Selesai.' })
   }
   if (body.assigneeId) {
