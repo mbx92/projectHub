@@ -46,6 +46,13 @@ function ensureBucket(ctx: S3Ctx) {
 
 export const storageBackend = () => (s3Ctx() ? 's3' : 'lokal') as 's3' | 'lokal'
 
+/** Ringkasan backend penyimpanan untuk halaman Integrasi (tanpa kunci rahasia). */
+export function storageInfo() {
+  const ctx = s3Ctx()
+  if (!ctx) return { backend: 'lokal' as const, endpoint: null, bucket: null }
+  return { backend: 's3' as const, endpoint: String(useRuntimeConfig().s3Endpoint), bucket: ctx.bucket }
+}
+
 function safeKey(key: string) {
   if (!/^[\w-]+\/[\w.-]+$/.test(key) || key.includes('..')) throw createError({ statusCode: 400, statusMessage: 'Kunci file tidak valid.' })
   return key

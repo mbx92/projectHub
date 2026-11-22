@@ -425,6 +425,18 @@ const INTEGRATIONS = [
       <section v-if="sec === 'integrations'" class="card-pad flex flex-col gap-4">
         <div class="flex flex-col gap-1"><h2 class="section-title">Integrasi</h2><span class="text-sm text-muted">Hubungkan layanan untuk pengingat, penyimpanan dokumen, dan notifikasi. Tersedia di fase 2.</span></div>
         <div class="grid gap-4 sm:grid-cols-2">
+          <article class="rounded-xl border border-line-2 p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="w-11 h-11 rounded-[10px] flex items-center justify-center font-bold bg-[#FEE4E2] text-[#B42318]">M</span>
+              <span class="badge" :class="settings?.storage?.backend === 's3' ? 'bg-success-50 text-success-700' : 'bg-soft-2 text-muted'">{{ settings?.storage?.backend === 's3' ? 'Terhubung' : 'Tidak aktif' }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="font-semibold">MinIO / S3</span>
+              <span class="text-sm text-muted">Penyimpanan file upload (dokumen, lampiran bug, logo).</span>
+              <span v-if="settings?.storage?.backend === 's3'" class="text-xs text-muted break-all">{{ settings.storage.endpoint }} · bucket <b>{{ settings.storage.bucket }}</b></span>
+              <span v-else class="text-xs text-muted">Memakai folder lokal. Isi NUXT_S3_ENDPOINT, NUXT_S3_BUCKET, NUXT_S3_ACCESS_KEY, NUXT_S3_SECRET_KEY lalu deploy ulang.</span>
+            </div>
+          </article>
           <article v-for="g in INTEGRATIONS" :key="g.name" class="rounded-xl border border-line-2 p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between"><span class="w-11 h-11 rounded-[10px] flex items-center justify-center font-bold" :style="{ background: g.bg, color: g.fg }">{{ g.name[0] }}</span><span class="badge bg-soft-2 text-muted">Fase 2</span></div>
             <div class="flex flex-col gap-0.5"><span class="font-semibold">{{ g.name }}</span><span class="text-sm text-muted">{{ g.desc }}</span></div>

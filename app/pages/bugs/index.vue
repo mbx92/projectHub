@@ -51,8 +51,20 @@ async function move(bugId: number, status: BugStatus) {
     toast.error(errorMessage(e))
   }
 }
-function onDrop(status: BugStatus) {
-  if (dragging.value) move(dragging.value, status)
+function onDragStart(e: DragEvent, id: number) {
+  // Firefox menolak drag tanpa data; efek 'move' membuat kursor drop valid di semua browser.
+  e.dataTransfer?.setData('text/plain', String(id))
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
+  // Tunda perubahan state agar re-render tidak membatalkan drag yang baru mulai.
+  setTimeout(() => { dragging.value = id })
+}
+function onDragOver(e: DragEvent, status: BugStatus) {
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
+  overCol.value = status
+}
+function onDrop(e: DragEvent, status: BugStatus) {
+  const id = dragging.value ?? Number(e.dataTransfer?.getData('text/plain'))
+  if (id) move(id, status)
   dragging.value = null
   overCol.value = null
 }
@@ -90,9 +102,9 @@ const showBug = ref(route.query.lapor === '1')
       :aria-label="col.name"
       class="min-w-0 rounded-xl bg-soft-2 p-3 flex flex-col gap-3 min-h-40 transition"
       :class="overCol === col.key && 'ring-2 ring-brand-600 bg-brand-soft'"
-      @dragover.prevent="overCol = col.key"
-      @dragleave="overCol = null"
-      @drop.prevent="onDrop(col.key)"
+      @dragover.prevent="onDragOver($event, col.key)"
+      @dragleave="(e: DragEvent) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) overCol = null }"
+      @drop.prevent="onDrop($event, col.key)"
     >
       <h2 class="m-0 flex items-center justify-between text-sm font-bold px-1">
         <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full" :style="{ background: col.dot }" />{{ col.name }}</span>
@@ -104,7 +116,7 @@ const showBug = ref(route.query.lapor === '1')
         draggable="true"
         class="min-w-0 overflow-hidden bg-white rounded-lg border border-line-2 p-3 flex flex-col gap-2 shadow-xs cursor-grab active:cursor-grabbing"
         :class="dragging === b.id && 'opacity-50'"
-        @dragstart="dragging = b.id"
+        @dragstart="onDragStart($event, b.id)"
         @dragend="dragging = null; overCol = null"
       >
         <div class="flex items-center justify-between gap-2 min-w-0">
