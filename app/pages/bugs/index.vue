@@ -42,12 +42,15 @@ async function move(bugId: number, status: BugStatus) {
   const b = bugs.value.find(x => x.id === bugId)
   if (!b || b.status === status) return
   const prev = b.status
-  b.status = status
+  // data useFetch bersifat shallow: ganti array (bukan mutasi objek) agar kartu langsung pindah kolom.
+  const setStatus = (s: BugStatus) => { bugs.value = bugs.value.map(x => x.id === bugId ? { ...x, status: s } : x) }
+  setStatus(status)
   try {
     await $fetch<unknown>(`/api/bugs/${bugId}`, { method: 'PATCH', body: { status } })
     toast.success(`${b.code} → ${BUG_STATUS[status].label}`)
+    refresh()
   } catch (e) {
-    b.status = prev
+    setStatus(prev)
     toast.error(errorMessage(e))
   }
 }
