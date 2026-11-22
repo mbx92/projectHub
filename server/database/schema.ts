@@ -285,6 +285,8 @@ export const bugs = pgTable('bugs', {
   id: serial('id').primaryKey(),
   code: varchar('kode', { length: 20 }).notNull(),
   projectId: integer('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  /** bug | fitur | tugas */
+  type: varchar('jenis', { length: 20 }).notNull().default('bug'),
   title: varchar('judul', { length: 200 }).notNull(),
   description: text('deskripsi'),
   steps: text('langkah'),

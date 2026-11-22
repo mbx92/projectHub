@@ -1,6 +1,6 @@
 <script setup lang="ts">
 definePageMeta({ middleware: 'role', access: ['bug', 'lihat'] })
-useHead({ title: 'Bug Tracker — OCN Project Hub' })
+useHead({ title: 'Tracker — OCN Project Hub' })
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -14,8 +14,10 @@ const { data: bugs, refresh } = await useFetch('/api/bugs', { query: { projectId
 
 const sev = ref<BugSeverity | 'semua'>('semua')
 const mine = ref(false)
+const typeFilter = ref<BugType | 'semua'>('semua')
 const filtered = computed(() => bugs.value
   .filter(b => sev.value === 'semua' || b.severity === sev.value)
+  .filter(b => typeFilter.value === 'semua' || b.type === typeFilter.value)
   .filter(b => !mine.value || b.assigneeId === user.value?.id)
   .sort((a, b) => BUG_SEVERITY[a.severity].order - BUG_SEVERITY[b.severity].order || +new Date(b.createdAt) - +new Date(a.createdAt)))
 const COLS: { key: BugStatus, name: string, dot: string }[] = [
@@ -76,17 +78,22 @@ const showBug = ref(route.query.lapor === '1')
 </script>
 
 <template>
-  <UiPageHeader title="Bug Tracker" subtitle="Laporan bug per proyek: Open → Dikerjakan → Review → Selesai.">
+  <UiPageHeader title="Tracker" subtitle="Bug, fitur, dan tugas per proyek: Open → Dikerjakan → Review → Selesai.">
     <template #actions>
       <div class="w-64"><UiSearchSelect v-model="projectId" :options="[{ value: null, label: 'Semua proyek' }, ...projectList.map(p => ({ value: p.id as number | null, label: p.name }))]" aria-label="Proyek" search-placeholder="Cari proyek…" placeholder="Semua proyek" /></div>
       <NuxtLink v-if="projectId" :to="`/projects/${projectId}?tab=bug`" class="btn-secondary">Buka detail proyek</NuxtLink>
-      <button type="button" class="btn-primary" v-if="can('bug', 'ditugaskan')" :disabled="!projectList.length" @click="showBug = true">+ Laporkan Bug</button>
+      <button type="button" class="btn-primary" v-if="can('bug', 'ditugaskan')" :disabled="!projectList.length" @click="showBug = true">+ Tambah Item</button>
     </template>
   </UiPageHeader>
 
-  <section aria-label="Statistik bug" class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(170px,1fr))]">
+  <section aria-label="Statistik tracker" class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(170px,1fr))]">
     <UiKpi v-for="s in stats" :key="s.label" :label="s.label" :value="s.value" :color="s.value ? s.color : undefined" />
   </section>
+
+  <div role="group" aria-label="Filter jenis" class="pill-tabs self-start">
+    <button type="button" class="pill-tab" :aria-pressed="typeFilter === 'semua'" @click="typeFilter = 'semua'">Semua jenis</button>
+    <button v-for="t in (Object.keys(BUG_TYPE) as BugType[])" :key="t" type="button" class="pill-tab" :aria-pressed="typeFilter === t" @click="typeFilter = t">{{ BUG_TYPE[t].label }} · {{ bugs.filter(b => b.type === t).length }}</button>
+  </div>
 
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div role="group" aria-label="Filter tingkat keparahan" class="pill-tabs">
@@ -123,7 +130,7 @@ const showBug = ref(route.query.lapor === '1')
         @dragend="dragging = null; overCol = null"
       >
         <div class="flex items-center justify-between gap-2 min-w-0">
-          <span class="text-xs font-mono text-muted shrink-0">{{ b.code }}</span>
+          <span class="flex items-center gap-1.5 min-w-0"><span class="text-xs font-mono text-muted shrink-0">{{ b.code }}</span><UiBadge v-if="b.type !== 'bug'" :tone="BUG_TYPE[b.type as BugType]" /></span>
           <UiBadge :tone="BUG_SEVERITY[b.severity]" />
         </div>
         <span v-if="!projectId" class="block truncate text-xs font-medium text-info-700" :title="b.projectName">{{ b.projectName }}</span>

@@ -1,0 +1,1 @@
+ALTER TABLE "bugs" ADD COLUMN "jenis" varchar(20) DEFAULT 'bug' NOT NULL;

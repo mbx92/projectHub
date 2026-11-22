@@ -1,9 +1,9 @@
 import { eq, sql } from 'drizzle-orm'
 
-export async function nextBugCode(tx: DB | Tx): Promise<string> {
+export async function nextBugCode(tx: DB | Tx, type: BugType = 'bug'): Promise<string> {
   const r = await tx.execute(sql`select coalesce(max((regexp_replace(kode, '[^0-9]', '', 'g'))::int), 0) as n from bugs`)
   const n = Number((r.rows[0] as any)?.n ?? 0) + 1
-  return `BUG-${String(n).padStart(3, '0')}`
+  return `${BUG_TYPE[type].prefix}-${String(n).padStart(3, '0')}`
 }
 
 export async function loadBugForUser(me: SessionUser, id: number) {

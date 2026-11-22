@@ -64,10 +64,11 @@ const isImage = (m: string | null) => !!m && m.startsWith('image/')
   <div v-if="data" class="flex flex-col gap-6">
     <UiPageHeader :title="bug.title">
       <template #before>
-        <div class="flex items-center gap-2 text-sm"><NuxtLink :to="`/bugs?project=${bug.projectId}`" class="font-semibold">← Bug Tracker</NuxtLink><span class="text-muted">/</span><span class="font-mono text-muted">{{ bug.code }}</span></div>
+        <div class="flex items-center gap-2 text-sm"><NuxtLink :to="`/bugs?project=${bug.projectId}`" class="font-semibold">← Tracker</NuxtLink><span class="text-muted">/</span><span class="font-mono text-muted">{{ bug.code }}</span></div>
       </template>
       <template #meta>
         <div class="flex flex-wrap gap-2 mt-1">
+          <UiBadge v-if="bug.type !== 'bug'" :tone="BUG_TYPE[bug.type as BugType]" />
           <UiBadge :tone="BUG_SEVERITY[bug.severity]" />
           <UiBadge :tone="BUG_STATUS[bug.status]" />
           <span v-if="bug.module" class="badge bg-soft-2 text-ink-2">{{ bug.module }}</span>
@@ -130,9 +131,9 @@ const isImage = (m: string | null) => !!m && m.startsWith('image/')
         <section class="card-pad flex flex-col gap-4">
           <UiSelect :model-value="bug.status" label="Status" :options="statusOpts" :disabled="!can.changeStatus" @change="v => onStatus(v as BugStatus)" />
           <UiSelect :model-value="bug.assigneeId" label="Ditugaskan ke" :options="assignOpts" :disabled="!can.editAll" @change="v => patch({ assigneeId: v }, 'Penanggung jawab diubah')" />
-          <UiSelect :model-value="bug.severity" label="Keparahan" :options="sevOpts" :disabled="!can.editAll" @change="v => patch({ severity: v })" />
+          <UiSelect :model-value="bug.severity" :label="bug.type === 'bug' ? 'Keparahan' : 'Prioritas'" :options="sevOpts" :disabled="!can.editAll" @change="v => patch({ severity: v })" />
           <UiDateTimeInput :model-value="bug.targetDate" label="Target selesai" :disabled="!can.editAll" @update:model-value="v => patch({ targetDate: v })" />
-          <label class="flex items-center gap-2 text-sm min-h-11" :class="can.editAll ? 'cursor-pointer' : 'opacity-60'"><input type="checkbox" class="w-[18px] h-[18px] accent-brand-600" :checked="bug.blocksTerm" :disabled="!can.editAll" @change="e => patch({ blocksTerm: (e.target as HTMLInputElement).checked })">Menghambat termin</label>
+          <label v-if="bug.type === 'bug'" class="flex items-center gap-2 text-sm min-h-11" :class="can.editAll ? 'cursor-pointer' : 'opacity-60'"><input type="checkbox" class="w-[18px] h-[18px] accent-brand-600" :checked="bug.blocksTerm" :disabled="!can.editAll" @change="e => patch({ blocksTerm: (e.target as HTMLInputElement).checked })">Menghambat termin</label>
           <dl class="m-0 flex flex-col gap-2 text-sm border-t border-line-3 pt-4">
             <div class="flex justify-between gap-2"><dt class="text-muted">Proyek</dt><dd class="m-0 text-right"><NuxtLink :to="`/projects/${data.project?.id}`">{{ data.project?.name }}</NuxtLink></dd></div>
             <div class="flex justify-between gap-2"><dt class="text-muted">Dilaporkan oleh</dt><dd class="m-0 font-semibold text-right">{{ bug.reporter ?? '—' }}</dd></div>

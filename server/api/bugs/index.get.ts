@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const projectId = q.projectId ? Number(q.projectId) : null
   if (projectId) await assertProjectAccess(me, projectId)
   return useDB().select({
-    id: schema.bugs.id, code: schema.bugs.code, title: schema.bugs.title, module: schema.bugs.module, severity: schema.bugs.severity,
+    id: schema.bugs.id, type: schema.bugs.type, code: schema.bugs.code, title: schema.bugs.title, module: schema.bugs.module, severity: schema.bugs.severity,
     status: schema.bugs.status, projectId: schema.bugs.projectId, projectName: schema.projects.name, assigneeId: schema.bugs.assigneeId,
     assigneeName: schema.users.name, assigneeColor: schema.users.avatarColor, reporter: schema.bugs.reporter, targetDate: schema.bugs.targetDate,
     blocksTerm: schema.bugs.blocksTerm, createdAt: schema.bugs.createdAt, resolvedAt: schema.bugs.resolvedAt,

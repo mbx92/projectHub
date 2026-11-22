@@ -5,6 +5,8 @@ export type TermStatus = 'terjadwal' | 'draf' | 'terkirim' | 'lunas'
 export type TermDisplayStatus = TermStatus | 'terlambat'
 export type BugSeverity = 'kritis' | 'tinggi' | 'sedang' | 'rendah'
 export type BugStatus = 'open' | 'dikerjakan' | 'review' | 'selesai'
+/** Jenis item di tracker: bug, fitur baru, atau tugas lain. */
+export type BugType = 'bug' | 'fitur' | 'tugas'
 
 export interface Tone { label: string, fg: string, bg: string }
 
@@ -38,6 +40,12 @@ export const BUG_SEVERITY: Record<BugSeverity, Tone & { order: number }> = {
   tinggi: { label: 'Tinggi', fg: '#B54708', bg: '#FEF0C7', order: 1 },
   sedang: { label: 'Sedang', fg: '#175CD3', bg: '#E8F0FE', order: 2 },
   rendah: { label: 'Rendah', fg: '#344054', bg: '#F2F4F7', order: 3 },
+}
+
+export const BUG_TYPE: Record<BugType, Tone & { prefix: string }> = {
+  bug: { label: 'Bug', fg: '#B42318', bg: '#FEE4E2', prefix: 'BUG' },
+  fitur: { label: 'Fitur', fg: '#5925DC', bg: '#F4F3FF', prefix: 'FTR' },
+  tugas: { label: 'Tugas', fg: '#175CD3', bg: '#E8F0FE', prefix: 'TSK' },
 }
 
 export const BUG_STATUS: Record<BugStatus, Tone> = {

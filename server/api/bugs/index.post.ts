@@ -4,6 +4,7 @@ export default defineEventHandler(async (event) => {
   const me = requireAccess(event, 'bug', 'ditugaskan')
   const body = await readBodyWith(event, z.object({
     projectId: zId,
+    type: z.enum(['bug', 'fitur', 'tugas']).default('bug'),
     title: z.string().trim().min(3, 'judul minimal 3 karakter').max(200),
     description: zOptText(5000),
     steps: zOptText(5000),
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
   const db = useDB()
   const [project] = await db.select({ name: schema.projects.name }).from(schema.projects).where(eq(schema.projects.id, body.projectId))
   const bug = await db.transaction(async (tx) => {
-    const code = await nextBugCode(tx)
+    const code = await nextBugCode(tx, body.type)
     const { attachments, ...fields } = body
     const [b] = await tx.insert(schema.bugs).values({
       ...fields, assigneeId, code, reporter: body.reporter || me.name, reporterUserId: me.id, status: 'open', createdBy: me.id,
@@ -31,14 +32,14 @@ export default defineEventHandler(async (event) => {
     if (attachments.length) {
       await tx.insert(schema.attachments).values(attachments.map(a => ({ entityType: 'bug', entityId: b!.id, fileKey: a.key, fileName: a.name, mime: a.mime ?? null, size: a.size ?? null, createdBy: me.id })))
     }
-    await bugActivity(tx, b!.id, me.id, 'melaporkan bug')
+    await bugActivity(tx, b!.id, me.id, body.type === 'bug' ? 'melaporkan bug' : `menambahkan ${BUG_TYPE[body.type].label.toLowerCase()}`)
     return b!
   })
   if (bug.severity === 'kritis') {
-    await notifyUsers(await adminIds(), { type: 'bug_kritis', title: `Bug kritis ${bug.code}: ${bug.title}`, body: `Proyek ${project?.name}${bug.blocksTerm ? ' · menghambat termin' : ''}`, link: `/bugs/${bug.id}` }, me.id)
+    await notifyUsers(await adminIds(), { type: 'bug_kritis', title: `${BUG_TYPE[bug.type as BugType].label} kritis ${bug.code}: ${bug.title}`, body: `Proyek ${project?.name}${bug.blocksTerm ? ' · menghambat termin' : ''}`, link: `/bugs/${bug.id}` }, me.id)
   }
   else {
-    await notifyUsers(await adminIds(), { type: 'bug_baru', title: `Bug baru ${bug.code}: ${bug.title}`, body: `Proyek ${project?.name} · keparahan ${BUG_SEVERITY[bug.severity].label}`, link: `/bugs/${bug.id}` }, me.id)
+    await notifyUsers(await adminIds(), { type: 'bug_baru', title: `${BUG_TYPE[bug.type as BugType].label} baru ${bug.code}: ${bug.title}`, body: `Proyek ${project?.name} · prioritas ${BUG_SEVERITY[bug.severity].label}`, link: `/bugs/${bug.id}` }, me.id)
   }
   if (assigneeId) {
     await notifyUsers([assigneeId], { type: 'bug_ditugaskan', title: `${bug.code} ditugaskan ke Anda`, body: `${bug.title} · ${project?.name}`, link: `/bugs/${bug.id}` }, me.id)
