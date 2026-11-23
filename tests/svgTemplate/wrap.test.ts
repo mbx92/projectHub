@@ -87,3 +87,15 @@ describe('font mapping', () => {
     expect(fontKey('Inter', 500)).toBe('PJS-400')
   })
 })
+
+describe('auto-width text near the page edge', () => {
+  it('ellipsizes instead of running off the page (right margin 40pt)', () => {
+    const s = one(10, 10, 40, 12, 10, 40, STYLE(9))
+    const longName = 'PT Nama Perusahaan Klien Yang Sangat Panjang Sekali '.repeat(3).trim()
+    const t = textEl(fillSinglePage(s, { values: { v: longName }, measure }))
+    const ls = lines(t)
+    expect(ls).toHaveLength(1)
+    expect(ls[0]!.endsWith('…')).toBe(true)
+    expect(measure(ls[0]!, 'PJS-400', 9)).toBeLessThanOrEqual(595 - 40 - 10)
+  })
+})

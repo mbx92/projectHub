@@ -17,6 +17,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.output ./.output
 COPY --from=build /app/server/database ./server/database
 COPY --from=build /app/shared ./shared
+COPY --from=build /app/server/assets ./server/assets
 COPY --from=build /app/package.json ./package.json
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x docker-entrypoint.sh && mkdir -p /data/storage && chown -R node:node /app /data

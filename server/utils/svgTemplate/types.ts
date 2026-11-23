@@ -10,7 +10,7 @@ export interface FillInput {
   measure: Measure
 }
 
-export type TemplateErrorCode = 'invalid_svg' | 'too_large' | 'bad_size' | 'missing_placeholder' | 'no_capacity' | 'content_box_mismatch'
+export type TemplateErrorCode = 'invalid_svg' | 'too_large' | 'bad_size' | 'missing_placeholder' | 'no_capacity' | 'content_box_mismatch' | 'unsupported_glyph'
 
 export class TemplateError extends Error {
   constructor(public code: TemplateErrorCode, message: string) {

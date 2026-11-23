@@ -3,7 +3,7 @@ import { isiBox } from './box'
 import { capacity, rowInfo } from './repeat'
 import { placeholdersIn } from './text'
 import { TemplateError } from './types'
-import { parseSvg, walk } from './xml'
+import { parseSvg, textContent, walk } from './xml'
 import { parseStyle } from './fonts'
 
 export interface Validation { errors: string[], warnings: string[] }
@@ -17,6 +17,7 @@ const KNOWN: Record<TemplateKind, string[]> = {
   kuitansi: [...COMMON, 'nomor', 'invoice.nomor', 'klien.nama', 'nominal', 'terbilang', 'untuk', 'tanggal', 'metode', 'status_invoice', 'tempat_tanggal'],
   dokumen: [...COMMON, 'judul', 'nomor', 'proyek.nama', 'klien.nama', 'tanggal', 'footer', 'isi'],
 }
+const PER_PAGE_INVOICE = ['item.deskripsi', 'item.jumlah', 'total', 'halaman']
 const REQUIRED: Record<TemplateKind, string[]> = {
   invoice: ['nomor', 'total', 'item.deskripsi', 'item.jumlah', 'halaman'],
   kuitansi: ['nomor', 'nominal'],
@@ -42,6 +43,13 @@ export function validateTemplate(kind: TemplateKind, pages: Partial<Record<Templ
       continue
     }
     parsed.push([page, svg])
+    const pageKeys = new Set(placeholdersIn(svg).map(k => k.replace(/^\?/, '')))
+    if (kind === 'invoice') for (const req of PER_PAGE_INVOICE) if (!pageKeys.has(req)) errors.push(`${page}: penanda {{${req}}} tidak ditemukan (wajib ada di setiap halaman invoice).`)
+    walk(root, (n) => {
+      if (n.name !== 'text') return
+      const rest = textContent(n).replace(/\{\{\s*\??[\w.]+\s*\}\}/g, '')
+      if (/\{\s*\{|\}\s*\}/.test(rest)) errors.push(`${page}: penanda terpecah atau tidak lengkap pada teks "${textContent(n).slice(0, 40)}" — tulis tiap penanda utuh dalam satu teks dengan satu gaya.`)
+    })
     const w = Number(root.attr.width), h = Number(root.attr.height)
     if (Math.abs(w - PAGE_W) > 1 || Math.abs(h - PAGE_H) > 1) errors.push(`${page}: ukuran harus ${PAGE_W} × ${PAGE_H} (A4), terbaca ${w || '?'} × ${h || '?'}.`)
     for (const k of placeholdersIn(svg)) keys.add(k.replace(/^\?/, ''))
@@ -60,6 +68,7 @@ export function validateTemplate(kind: TemplateKind, pages: Partial<Record<Templ
     for (const [page, svg] of parsed) {
       const info = rowInfo(svg)
       if (info && capacity(info, false) < 1) errors.push(`${page}: baris item tidak muat di halaman (kapasitas 0) — footer terlalu dekat dengan baris.`)
+      else if (info && capacity(info, true) < 1) errors.push(`${page}: blok bawah (total, pembayaran, tanda tangan) terlalu besar — tidak ada ruang untuk satu baris item di halaman terakhir.`)
     }
   }
   if (kind === 'dokumen') {

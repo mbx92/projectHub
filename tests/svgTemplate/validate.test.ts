@@ -60,3 +60,34 @@ describe('validateTemplate — kuitansi & dokumen', () => {
     expect(r.errors.length).toBeGreaterThan(0)
   })
 })
+
+describe('validateTemplate — review fixes', () => {
+  const row = '<g id="shape-row"><rect x="0" y="100" width="500" height="28"/><g class="text-container" x="0" y="100" width="100" height="10"><g><text x="0" y="110">{{item.deskripsi}} {{item.jumlah}}</text></g></g></g>'
+  const foot = '<g id="shape-foot"><rect x="0" y="800" width="500" height="20"/><g class="text-container" x="0" y="800" width="100" height="10"><g><text x="0" y="810">{{halaman}}</text></g></g></g>'
+  const tot = '<g id="shape-tot"><rect x="0" y="140" width="500" height="40"/><g class="text-container" x="0" y="140" width="100" height="10"><g><text x="0" y="150">{{total}} {{nomor}}</text></g></g></g>'
+
+  it('requires the row, total and {{halaman}} on EVERY invoice page, not just in the union', () => {
+    const good = svg(row + tot + foot)
+    const noRow = svg(tot + foot)
+    const noTotal = svg(row + foot)
+    const noFooter = svg(row + tot)
+    expect(validateTemplate('invoice', { 'halaman-1': good, 'halaman-lanjutan': good }).errors).toEqual([])
+    expect(validateTemplate('invoice', { 'halaman-1': good, 'halaman-lanjutan': noRow }).errors.join(' ')).toMatch(/halaman-lanjutan.*item/)
+    expect(validateTemplate('invoice', { 'halaman-1': good, 'halaman-lanjutan': noTotal }).errors.join(' ')).toMatch(/halaman-lanjutan.*total/)
+    expect(validateTemplate('invoice', { 'halaman-1': good, 'halaman-lanjutan': noFooter }).errors.join(' ')).toMatch(/halaman-lanjutan.*halaman/)
+  })
+
+  it('rejects a page whose total block leaves no room for a single row on the last page', () => {
+    const bigBottom = svg(row + '<g id="shape-tot"><rect x="0" y="140" width="500" height="680"/><g class="text-container" x="0" y="140" width="100" height="10"><g><text x="0" y="150">{{total}} {{nomor}}</text></g></g></g>' + foot)
+    const r = validateTemplate('invoice', { 'halaman-1': bigBottom, 'halaman-lanjutan': bigBottom })
+    expect(r.errors.join(' ')).toMatch(/halaman terakhir|blok bawah/i)
+  })
+
+  it('errors on split or incomplete placeholders instead of printing them raw', () => {
+    const split = svg(text('a', 0, 0, 80, 10, '{{klien.') + text('b', 0, 20, 80, 10, 'nama}}') + text('c', 0, 40, 80, 10, '{{nominal}}') + text('d', 0, 60, 80, 10, '{{nomor}}'))
+    const r = validateTemplate('kuitansi', { 'halaman-1': split })
+    expect(r.errors.join(' ')).toMatch(/terpecah|tidak lengkap/)
+    const spaced = svg(text('a', 0, 0, 80, 10, '{ {total} }') + text('c', 0, 40, 80, 10, '{{nominal}}') + text('d', 0, 60, 80, 10, '{{nomor}}'))
+    expect(validateTemplate('kuitansi', { 'halaman-1': spaced }).errors.join(' ')).toMatch(/terpecah|tidak lengkap/)
+  })
+})

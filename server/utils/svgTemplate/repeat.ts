@@ -43,7 +43,8 @@ function findRow(root: El): El | null {
 }
 
 function belowShapes(holder: El, row: El, rowBottom: number): El[] {
-  return elements(holder).filter(s => s !== row && !hasText(s, HALAMAN) && bounds(s).top >= rowBottom - 0.5)
+  // Shape tanpa rect/kotak teks (path, ikon, garis) tidak punya batas yang bisa diukur: biarkan di tempatnya.
+  return elements(holder).filter(s => s !== row && !hasText(s, HALAMAN) && Number.isFinite(bounds(s).top) && bounds(s).top >= rowBottom - 0.5)
 }
 
 function measureRow(root: El, row: El, parents: Map<El, El | null>): RowInfo {
@@ -83,7 +84,10 @@ function renderPage(svg: string, rows: Record<string, string>[], isLast: boolean
   const base = { ...input, values: { ...input.values, halaman: label } }
   const root = parseSvg(svg)
   const row = findRow(root)
-  if (!row) return fillSinglePage(svg, base)
+  if (!row) {
+    if (rows.length) throw new TemplateError('missing_placeholder', 'Halaman template tidak memiliki baris item ({{item.*}}) padahal item harus ditampilkan di halaman ini.')
+    return fillSinglePage(svg, base)
+  }
   const parents = parentMap(root)
   const holder = parents.get(row)!
   const info = measureRow(root, row, parents)

@@ -93,3 +93,32 @@ describe('renderTemplatePages', () => {
     expect(texts(renderTemplatePages({ first: frame }, base)[0]!).map(t => textOf(t.node))).toEqual(['Hal. 1 dari 1'])
   })
 })
+
+describe('renderTemplatePages — review fixes', () => {
+  const wrap = (inner: string) => '<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842"><g id="shape-root">' + inner + '</g></svg>'
+  const shape = (id: string, y: number, h: number, body: string) => '<g id="shape-' + id + '"><rect x="0" y="' + y + '" width="500" height="' + h + '"/><g class="text-container" x="0" y="' + y + '" width="100" height="10"><g><text x="0" y="' + (y + 10) + '">' + body + '</text></g></g></g>'
+  const rowS = shape('row', 100, 20, '{{item.deskripsi}}')
+  const footS = shape('foot', 800, 20, '{{halaman}}')
+  const baseIn = { values: { total: 'Rp 9' }, measure }
+  const mk = (n: number) => Array.from({ length: n }, (_, i) => ({ 'item.deskripsi': 'Item ' + (i + 1) }))
+
+  it('throws instead of silently dropping items when a continuation page has no row', () => {
+    const first = wrap(rowS + footS)
+    const next = wrap(footS)
+    expect(() => renderTemplatePages({ first, next }, { ...baseIn, items: mk(80) })).toThrowError(TemplateError)
+  })
+
+  it('leaves shapes without a <rect> or text box (paths, icons) where the designer put them', () => {
+    const path = '<g id="shape-path"><path d="M0 0L10 10"/></g>'
+    const svg = wrap(path + rowS + shape('tot', 140, 40, '{{total}}') + footS)
+    const pages = renderTemplatePages({ first: svg, next: svg }, { ...baseIn, items: mk(5) })
+    const anc = (s: string) => {
+      const out: string[] = []
+      const walk = (n: any, a: string[]) => { for (const c of n.children ?? []) { if (c.name === 'path') out.push(a.join('|')); if (c.children) walk(c, [...a, c.attr?.transform ?? '']) } }
+      walk(new XmlDocument(s), [])
+      return out
+    }
+    for (const p of pages) expect(anc(p)).toHaveLength(1)
+    expect(anc(pages[0]!)[0]!.split('|').every(x => x === '')).toBe(true)
+  })
+})

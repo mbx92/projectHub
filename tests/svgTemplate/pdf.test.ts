@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { ensureTemplateFonts, framedDocPdf, pdfMeasure, renderWithFallback, svgPagesToPdf } from '../../server/utils/templatePdf'
+import { assertGlyphs, ensureTemplateFonts, framedDocPdf, pdfMeasure, renderWithFallback, svgPagesToPdf } from '../../server/utils/templatePdf'
 import { renderTemplatePages } from '../../server/utils/svgTemplate/repeat'
 import { TemplateError } from '../../server/utils/svgTemplate/types'
 
@@ -72,5 +72,22 @@ describe('framedDocPdf — bold content', () => {
     const bold = await framedDocPdf({ first: frame }, {}, [{ text: 'Judul', bold: true }], 'uji')
     expect(new Set(fontNames(plain)).size).toBe(new Set(fontNames(bold)).size)
     expect(fontNames(bold).join(' ')).not.toBe(fontNames(plain).join(' '))
+  })
+})
+
+describe('glyph guard (bundled font is Latin only)', () => {
+  const page = (txt: string) => '<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842"><text x="0" y="10" style="font-family: PJS-400; font-size: 9px">' + txt + '</text></svg>'
+  it('accepts Indonesian text, money and the punctuation the templates use', () => {
+    expect(() => assertGlyphs(['Halo — Rp 1.000.000 · − Rp 5 … "kutip" (ok) 100%'])).not.toThrow()
+  })
+  it('rejects characters the font cannot draw so the caller falls back to the built-in layout', () => {
+    expect(() => assertGlyphs(['Syarat ≥ 3 hari'])).toThrowError(expect.objectContaining({ code: 'unsupported_glyph' }))
+  })
+  it('svgPagesToPdf refuses pages with unsupported characters', async () => {
+    await expect(svgPagesToPdf([page('Žofia')], 'uji')).rejects.toBeInstanceOf(TemplateError)
+  })
+  it('framedDocPdf refuses document bodies with unsupported characters', async () => {
+    const frame = '<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842"><g id="shape-root"><g id="shape-i"><g class="text-container" x="40" y="100" width="515" height="650"><g><text x="40" y="110" textLength="20">{{isi}}</text></g></g></g></g></svg>'
+    await expect(framedDocPdf({ first: frame }, {}, [{ text: 'Waktu ≥ 3 hari' }], 'uji')).rejects.toBeInstanceOf(TemplateError)
   })
 })

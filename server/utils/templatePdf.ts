@@ -7,7 +7,7 @@ import { fillSinglePage } from './svgTemplate/text'
 import { TemplateError } from './svgTemplate/types'
 import type { Measure } from './svgTemplate/types'
 import { isiBox } from './svgTemplate/box'
-import { parseSvg } from './svgTemplate/xml'
+import { parseSvg, textContent, walk } from './svgTemplate/xml'
 
 const require = createRequire(import.meta.url)
 
@@ -38,8 +38,7 @@ export async function ensureTemplateFonts(): Promise<void> {
   buffers = Object.fromEntries(entries)
 }
 
-/** Lebar teks (pt) memakai metrik font yang sama dengan yang dicetak. */
-export const pdfMeasure: Measure = (text, family, size) => {
+function fontFor(family: string) {
   if (!buffers) throw new Error('Font template belum dimuat: panggil ensureTemplateFonts() lebih dulu.')
   const key = family in FONT_FILES ? family : 'PJS-400'
   let font = fontkitCache.get(key)
@@ -47,7 +46,42 @@ export const pdfMeasure: Measure = (text, family, size) => {
     font = require('@foliojs-fork/fontkit').create(buffers[key]!)
     fontkitCache.set(key, font)
   }
+  return font
+}
+
+/** Lebar teks (pt) memakai metrik font yang sama dengan yang dicetak. */
+export const pdfMeasure: Measure = (text, family, size) => {
+  const font = fontFor(family)
   return (font.layout(text).advanceWidth * size) / font.unitsPerEm
+}
+
+/**
+ * Font yang dibundel hanya memuat huruf Latin. Karakter di luar itu (≥ → Ž …) akan tercetak sebagai kotak kosong,
+ * jadi tolak render template (pemanggil jatuh ke layout bawaan) daripada mencetak data yang rusak.
+ */
+export function assertGlyphs(strings: Iterable<string>): void {
+  const font = fontFor('PJS-400')
+  for (const str of strings) {
+    for (const ch of str) {
+      const cp = ch.codePointAt(0)!
+      if (cp <= 0x20 || (cp >= 0x7f && cp <= 0xa0) || cp === 0xad || (cp >= 0x200b && cp <= 0x200f)) continue
+      if (!font.hasGlyphForCodePoint(cp)) throw new TemplateError('unsupported_glyph', `Karakter "${ch}" (U+${cp.toString(16).toUpperCase().padStart(4, '0')}) tidak tersedia di font template.`)
+    }
+  }
+}
+
+function svgTexts(svg: string): string[] {
+  const out: string[] = []
+  walk(parseSvg(svg), (n) => { if (n.name === 'text') out.push(textContent(n)) })
+  return out
+}
+
+/** Semua string pada konten pdfmake (teks, daftar, tabel, kolom). */
+function contentStrings(c: unknown, out: string[] = []): string[] {
+  if (typeof c === 'string') out.push(c)
+  else if (Array.isArray(c)) c.forEach(x => contentStrings(x, out))
+  else if (c && typeof c === 'object') for (const [k, v] of Object.entries(c)) if (k === 'text' || (v && typeof v === 'object')) contentStrings(v, out)
+  return out
 }
 
 function getPrinter() {
@@ -93,6 +127,7 @@ export async function renderWithFallback<T>(primary: () => Promise<T>, fallback:
 /** Satu halaman PDF per SVG (A4, tanpa margin). */
 export async function svgPagesToPdf(pages: string[], title: string): Promise<Buffer> {
   await ensureTemplateFonts()
+  assertGlyphs(pages.flatMap(svgTexts))
   return toBuffer({
     pageSize: PAGE,
     pageMargins: 0,
@@ -118,6 +153,7 @@ export interface FrameOptions { images?: Record<string, string | null> }
 export async function framedDocPdf(frames: { first: string, next?: string }, values: Record<string, string>, body: Content[], title: string, opts: FrameOptions = {}): Promise<Buffer> {
   await ensureTemplateFonts()
   const margins = contentMargins(frames.first)
+  assertGlyphs([...Object.values(values), ...contentStrings(body)])
   const base = { pageSize: PAGE, pageMargins: margins, defaultStyle: { font: 'PJS-400', fontSize: 10 }, content: body, info: { title } }
 
   let total = 1

@@ -91,6 +91,8 @@ export function fillSinglePage(svg: string, input: FillInput): string {
     style.delete('font-weight')
 
     const w = input.measure(text, key, size)
+    // Kotak berlebar tetap: batas = lebar kotak. Kotak auto-width (Penpot mengepaskannya ke penanda): batas = tepi kanan halaman dikurangi margin 40.
+    const bound = fixedBox ? width : num(root.attr.width, 595) - 40 - num(t.attr.x)
     const x0 = num(t.attr.x), y0 = num(t.attr.y)
     if (align === 'end' || align === 'middle') {
       if (w > width) {
@@ -101,9 +103,9 @@ export function fillSinglePage(svg: string, input: FillInput): string {
       t.attr.x = String(align === 'end' ? left + width : left + width / 2)
       t.attr['text-anchor'] = align
       setTextContent(t, text)
-    } else if (fixedBox && w > width) {
+    } else if (w > bound) {
       const maxLines = Math.max(1, Math.floor(boxH / (size * 1.25)))
-      const ls = wrapLines(text, width, maxLines, (s) => input.measure(s, key, size))
+      const ls = wrapLines(text, bound, maxLines, (s) => input.measure(s, key, size))
       t.children = []
       t.firstChild = null
       t.lastChild = null
