@@ -8,9 +8,9 @@ const toast = useToast()
 const { confirm } = useConfirm()
 const { user: me, isAdmin } = useAuth()
 
-type Sec = 'profile' | 'skema' | 'users' | 'bank' | 'notif' | 'integrations'
+type Sec = 'profile' | 'skema' | 'users' | 'bank' | 'templates' | 'notif' | 'integrations'
 // Pengguna & Hak Akses khusus admin (agar hak akses tidak bisa dinaikkan sendiri).
-const SECS = ([['profile', 'Profil Usaha'], ['skema', 'Skema Bagi Hasil'], ['users', 'Pengguna & Hak Akses'], ['bank', 'Rekening & Metode Bayar'], ['notif', 'Notifikasi'], ['integrations', 'Integrasi']] as [Sec, string][])
+const SECS = ([['profile', 'Profil Usaha'], ['skema', 'Skema Bagi Hasil'], ['users', 'Pengguna & Hak Akses'], ['bank', 'Rekening & Metode Bayar'], ['templates', 'Template Dokumen'], ['notif', 'Notifikasi'], ['integrations', 'Integrasi']] as [Sec, string][])
   .filter(([k]) => k !== 'users' || isAdmin.value)
 const sec = ref<Sec>(SECS.some(([k]) => k === route.query.bagian) ? route.query.bagian as Sec : 'profile')
 watch(sec, s => router.replace({ query: { bagian: s } }))
@@ -422,6 +422,8 @@ const INTEGRATIONS = [
       </section>
 
       <!-- Integrasi -->
+      <SettingsDocTemplates v-if="sec === 'templates'" />
+
       <section v-if="sec === 'integrations'" class="card-pad flex flex-col gap-4">
         <div class="flex flex-col gap-1"><h2 class="section-title">Integrasi</h2><span class="text-sm text-muted">Hubungkan layanan untuk pengingat, penyimpanan dokumen, dan notifikasi. Tersedia di fase 2.</span></div>
         <div class="grid gap-4 sm:grid-cols-2">
