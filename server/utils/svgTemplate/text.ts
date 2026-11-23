@@ -130,7 +130,7 @@ function isAttached(n: El, root: El, parents: Map<El, El | null>): boolean {
 
 /** Bungkus per kata; kata terlalu panjang dipecah per huruf; baris terakhir yang tak muat diakhiri "…". */
 function wrapLines(text: string, maxW: number, maxLines: number, width: (s: string) => number): string[] {
-  const words = text.split(/s+/).filter(Boolean)
+  const words = text.split(/\s+/).filter(Boolean)
   const lines: string[] = []
   let cur = ''
   const pushHard = (word: string) => {

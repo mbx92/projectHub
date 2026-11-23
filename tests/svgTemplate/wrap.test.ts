@@ -29,6 +29,16 @@ describe('wrapping', () => {
     expect(ys[1]! - ys[0]!).toBeCloseTo(11.25, 2)
   })
 
+  it('keeps every character when wrapping (words with s, hard-broken long words)', () => {
+    const text = 'saat setelah sistem sesuai sangat sekali sesudah sss'
+    const s = one(10, 10, 100, 60, 10, 40, STYLE(9))
+    const t = textEl(fillSinglePage(s, { values: { v: text }, measure }))
+    expect(lines(t).join(' ')).toBe(text)
+    const long = 'supercalifragilisticexpialidocioussssss'
+    const t2 = textEl(fillSinglePage(s, { values: { v: long }, measure }))
+    expect(lines(t2).join('')).toBe(long)
+  })
+
   it('does not wrap auto-width boxes (box as wide as the placeholder text)', () => {
     const s = one(10, 10, 40, 12, 10, 40, STYLE(9))
     const t = textEl(fillSinglePage(s, { values: { v: long }, measure }))
