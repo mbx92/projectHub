@@ -7,12 +7,19 @@ import { docFrameValues, invoiceValues, receiptValues } from './templateData'
 import { ensureTemplateFonts, framedDocPdf, pdfMeasure, svgPagesToPdf } from './templatePdf'
 import { loadTemplatePages } from './docTemplates'
 import type { LoadedInvoice } from './invoices'
-import { storedImage } from './pdf'
 
-/** Gambar usaha sebagai data URL. Logo/tanda tangan SVG belum didukung di template → dikosongkan. */
+/** Gambar PNG/JPEG dari penyimpanan sebagai data URL. SVG belum didukung di template (pdfkit tidak bisa menanam SVG sebagai <image>) → null. */
+async function dataUrl(key: string | null | undefined): Promise<string | null> {
+  if (!key || !/.(png|jpe?g)$/i.test(key)) return null
+  try {
+    const buf = await readStoredFile(key)
+    return `data:${key.endsWith('.png') ? 'image/png' : 'image/jpeg'};base64,${buf.toString('base64')}`
+  } catch { return null }
+}
+
 export async function templateImages(business: Pick<BusinessProfile, 'logoKey' | 'signatureKey'>, qrisKey?: string | null): Promise<Record<string, string | null>> {
-  const [logo, ttd, qris] = await Promise.all([storedImage(business.logoKey), storedImage(business.signatureKey), storedImage(qrisKey)])
-  return { logo: logo?.image ?? null, ttd: ttd?.image ?? null, qris: qris?.image ?? null }
+  const [logo, ttd, qris] = await Promise.all([dataUrl(business.logoKey), dataUrl(business.signatureKey), dataUrl(qrisKey)])
+  return { logo, ttd, qris }
 }
 
 export async function renderInvoiceTemplate(data: LoadedInvoice, ref: TemplateRef, opts: { extraItems?: number } = {}): Promise<Buffer> {

@@ -78,6 +78,16 @@ function toBuffer(def: Record<string, unknown>): Promise<Buffer> {
 
 const PAGE = { width: 595, height: 842 }
 
+/** Coba render dari template; bila gagal apa pun, catat dan pakai layout bawaan (pembuatan dokumen tidak boleh gagal karena template). */
+export async function renderWithFallback<T>(primary: () => Promise<T>, fallback: () => Promise<T>, label: string): Promise<T> {
+  try {
+    return await primary()
+  } catch (e) {
+    console.error(`[template] ${label}: render template gagal, memakai layout bawaan`, e)
+    return fallback()
+  }
+}
+
 /** Satu halaman PDF per SVG (A4, tanpa margin). */
 export async function svgPagesToPdf(pages: string[], title: string): Promise<Buffer> {
   await ensureTemplateFonts()

@@ -113,7 +113,14 @@ export function footer(text: string) {
   })
 }
 
+/** Invoice: template Penpot bila ada (beku saat terkirim; draf memakai template aktif), selain itu layout bawaan. */
 export async function invoicePdf(data: LoadedInvoice): Promise<Buffer> {
+  const ref = data.invoice.templateRef ?? (data.invoice.status === 'draf' ? await activeTemplate('invoice') : null)
+  if (!ref) return builtinInvoicePdf(data)
+  return renderWithFallback(() => renderInvoiceTemplate(data, ref), () => builtinInvoicePdf(data), `invoice ${data.invoice.number}`)
+}
+
+async function builtinInvoicePdf(data: LoadedInvoice): Promise<Buffer> {
   const [business, invSettings] = await Promise.all([getSetting('business'), getSetting('invoice')])
   const { invoice: inv, items, client, project, bank } = data
   const qris = inv.showQris ? await storedImage(invSettings.qrisKey) : null
@@ -177,7 +184,14 @@ export async function invoicePdf(data: LoadedInvoice): Promise<Buffer> {
   return renderPdf({ content, footer: footer(`${business.name} · ${inv.number}`), info: { title: inv.number } })
 }
 
+/** Kuitansi: template Penpot yang dibekukan saat pembayaran dicatat, selain itu layout bawaan. */
 export async function receiptPdf(data: LoadedInvoice, paymentId: number): Promise<Buffer> {
+  const ref = data.payments.find(p => p.id === paymentId)?.templateRef
+  if (!ref) return builtinReceiptPdf(data, paymentId)
+  return renderWithFallback(() => renderReceiptTemplate(data, paymentId, ref), () => builtinReceiptPdf(data, paymentId), `kuitansi ${data.invoice.number}#${paymentId}`)
+}
+
+async function builtinReceiptPdf(data: LoadedInvoice, paymentId: number): Promise<Buffer> {
   const business = await getSetting('business')
   const pay = data.payments.find(p => p.id === paymentId)
   if (!pay) notFound('Pembayaran')

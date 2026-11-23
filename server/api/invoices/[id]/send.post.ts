@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
   if (data.invoice.status === 'lunas' || data.invoice.status === 'batal') throw createError({ statusCode: 422, statusMessage: 'Invoice ini sudah lunas atau dibatalkan.' })
 
   await db.transaction(async (tx) => {
-    await tx.update(schema.invoices).set({ status: 'terkirim', sentAt: new Date() }).where(eq(schema.invoices.id, id))
+    await tx.update(schema.invoices).set({ status: 'terkirim', sentAt: new Date(), templateRef: data.invoice.templateRef ?? await activeTemplate('invoice') }).where(eq(schema.invoices.id, id))
     if (data.invoice.termId) await tx.update(schema.terms).set({ status: 'terkirim' }).where(eq(schema.terms.id, data.invoice.termId))
     await logAudit(tx, me.id, 'kirim', 'invoice', id, { status: data.invoice.status }, { status: 'terkirim', projectId: data.project.id, name: data.invoice.number })
   })

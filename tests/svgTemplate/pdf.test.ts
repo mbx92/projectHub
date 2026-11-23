@@ -1,6 +1,6 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { ensureTemplateFonts, framedDocPdf, pdfMeasure, svgPagesToPdf } from '../../server/utils/templatePdf'
+import { ensureTemplateFonts, framedDocPdf, pdfMeasure, renderWithFallback, svgPagesToPdf } from '../../server/utils/templatePdf'
 import { renderTemplatePages } from '../../server/utils/svgTemplate/repeat'
 import { TemplateError } from '../../server/utils/svgTemplate/types'
 
@@ -44,5 +44,21 @@ describe('framedDocPdf', () => {
 
   it('rejects a frame without the {{isi}} box', async () => {
     await expect(framedDocPdf({ first: frame('') }, {}, [para(1)], 'uji')).rejects.toBeInstanceOf(TemplateError)
+  })
+})
+
+describe('renderWithFallback', () => {
+  it('falls back to built-in layout when the template throws, and logs it', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const out = await renderWithFallback(async () => { throw new Error('boom') }, async () => 'bawaan', 'invoice INV-1')
+    expect(out).toBe('bawaan')
+    expect(err).toHaveBeenCalledWith(expect.stringContaining('invoice INV-1'), expect.any(Error))
+    err.mockRestore()
+  })
+  it('returns the template result without touching the fallback when it succeeds', async () => {
+    let called = false
+    const out = await renderWithFallback(async () => 'template', async () => { called = true; return 'bawaan' }, 'x')
+    expect(out).toBe('template')
+    expect(called).toBe(false)
   })
 })
