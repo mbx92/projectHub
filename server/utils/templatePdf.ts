@@ -61,6 +61,8 @@ function getPrinter() {
     Roboto: { normal: f('Roboto-Regular.ttf'), bold: f('Roboto-Medium.ttf'), italics: f('Roboto-Italic.ttf'), bolditalics: f('Roboto-MediumItalic.ttf') },
   }
   for (const k of Object.keys(FONT_FILES)) fonts[k] = { normal: buffers[k]!, bold: buffers[k]!, italics: buffers[k]!, bolditalics: buffers[k]! }
+  // Isi dokumen memakai PJS-400 sebagai font dasar: `bold` harus benar-benar tebal (700), miring tidak tersedia.
+  fonts['PJS-400'] = { normal: buffers['PJS-400']!, bold: buffers['PJS-700']!, italics: buffers['PJS-400']!, bolditalics: buffers['PJS-700']! }
   printer = new PdfPrinter(fonts)
   return printer
 }

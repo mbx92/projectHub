@@ -6,6 +6,21 @@ Desainer membuat artboard di Penpot, mengekspornya sebagai **SVG**, lalu admin m
 
 Spesifikasi lengkap: `docs/superpowers/specs/2026-11-23-penpot-document-templates-design.md`.
 
+## Berkas contoh
+
+Template siap unggah (hasil ekspor Penpot, halaman "6 · Template Dokumen" di file desain) ada di `docs/templates/`:
+
+| Jenis | Artboard | Berkas |
+|---|---|---|
+| Invoice | `halaman-1` | `invoice-halaman-1.svg` |
+| Invoice | `halaman-lanjutan` | `invoice-lanjutan.svg` |
+| Kuitansi | `halaman-1` | `kuitansi.svg` |
+| Dokumen proyek | `halaman-1` | `dokumen-halaman-1.svg` |
+| Dokumen proyek | `halaman-lanjutan` | `dokumen-lanjutan.svg` |
+
+Berkas ini dites otomatis (`tests/svgTemplate/templates.test.ts`): harus selalu valid dan bisa dirender. Ubah desainnya di Penpot,
+ekspor ulang, dan timpa berkas ini bila template contoh berubah.
+
 ## Aturan umum
 
 - **Ukuran artboard: A4 = 595 × 842** (px Penpot = pt PDF). Ukuran lain ditolak saat unggah.

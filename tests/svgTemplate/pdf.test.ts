@@ -62,3 +62,15 @@ describe('renderWithFallback', () => {
     expect(called).toBe(false)
   })
 })
+
+describe('framedDocPdf — bold content', () => {
+  const frame = '<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842"><g id="shape-root"><g id="shape-i"><g class="text-container" x="40" y="100" width="515" height="650"><g><text x="40" y="110" textLength="20">{{isi}}</text></g></g></g></g></svg>'
+  const fontNames = (b: Buffer) => [...b.toString('latin1').matchAll(/\/BaseFont \/[A-Z]{6}\+([\w-]+)/g)].map(m => m[1]!)
+
+  it('embeds the bold weight when content is bold', async () => {
+    const plain = await framedDocPdf({ first: frame }, {}, [{ text: 'Judul' }], 'uji')
+    const bold = await framedDocPdf({ first: frame }, {}, [{ text: 'Judul', bold: true }], 'uji')
+    expect(new Set(fontNames(plain)).size).toBe(new Set(fontNames(bold)).size)
+    expect(fontNames(bold).join(' ')).not.toBe(fontNames(plain).join(' '))
+  })
+})
