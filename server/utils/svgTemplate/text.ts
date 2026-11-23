@@ -1,6 +1,7 @@
 import type { FillInput } from './types'
 import type { El } from './xml'
-import { appendEl, elements, isShape, makeEl, num, parentMap, parseSvg, removeEl, serialize, setTextContent, textBox, textContent, walk } from './xml'
+import { fontKey, parseStyle, styleToString } from './fonts'
+import { appendEl, elements, escapeXml, isShape, makeEl, num, parentMap, parseSvg, removeEl, serialize, setTextContent, textBox, textContent, walk } from './xml'
 
 const PH = /\{\{\s*(\??[\w.]+)\s*\}\}/g
 const IMAGE_KEYS = new Set(['logo', 'ttd', 'qris'])
@@ -70,17 +71,48 @@ export function fillSinglePage(svg: string, input: FillInput): string {
     if (board) { removeEl(board, parents); t.attr.__gone = '1' }
   }
 
-  // 4) isi + perataan
+  // 4) isi, perataan, font, bungkus / perkecil
   parents = parentMap(root)
   for (const t of texts) {
     if (t.attr.__gone) continue
-    if (!parents.has(t) || !isAttached(t, root, parents)) continue
-    const { align, left, width } = alignOf(t, textBox(t, parents))
-    setTextContent(t, fillText(textContent(t), input.values))
+    if (!isAttached(t, root, parents)) continue
+    const box = textBox(t, parents)
+    const { align, left, width } = alignOf(t, box)
+    const fixedBox = !!box && width - num(t.attr.textLength) > 1.5
+    const boxH = box ? num(box.attr.height) : 0
+    const text = fillText(textContent(t), input.values)
     delete t.attr.textLength
     delete t.attr.lengthAdjust
-    if (align === 'end') { t.attr.x = String(left + width); t.attr['text-anchor'] = 'end' }
-    else if (align === 'middle') { t.attr.x = String(left + width / 2); t.attr['text-anchor'] = 'middle' }
+
+    const style = parseStyle(t.attr.style)
+    let size = parseFloat(style.get('font-size') ?? '12') || 12
+    const key = fontKey((style.get('font-family') ?? '').replace(/["']/g, ''), Number(style.get('font-weight') ?? 400))
+    style.set('font-family', key)
+    style.delete('font-weight')
+
+    const w = input.measure(text, key, size)
+    const x0 = num(t.attr.x), y0 = num(t.attr.y)
+    if (align === 'end' || align === 'middle') {
+      if (w > width) {
+        const scale = Math.max(0.8, width / w)
+        if (width / w < 0.8) console.warn('[template] teks terlalu lebar untuk kotaknya, diperkecil 80%:', text.slice(0, 40))
+        size = Number((size * scale).toFixed(2))
+      }
+      t.attr.x = String(align === 'end' ? left + width : left + width / 2)
+      t.attr['text-anchor'] = align
+      setTextContent(t, text)
+    } else if (fixedBox && w > width) {
+      const maxLines = Math.max(1, Math.floor(boxH / (size * 1.25)))
+      const ls = wrapLines(text, width, maxLines, (s) => input.measure(s, key, size))
+      t.children = []
+      t.firstChild = null
+      t.lastChild = null
+      ls.forEach((l, i) => appendEl(t, makeEl(`<tspan x="${x0}" y="${Number((y0 + i * size * 1.25).toFixed(2))}">${escapeXml(l)}</tspan>`)))
+    } else {
+      setTextContent(t, text)
+    }
+    style.set('font-size', `${size}px`)
+    t.attr.style = styleToString(style)
   }
   for (const t of texts) delete t.attr.__gone
   return serialize(root)
@@ -94,4 +126,33 @@ function isAttached(n: El, root: El, parents: Map<El, El | null>): boolean {
     if (!up.children.includes(p)) return false
   }
   return false
+}
+
+/** Bungkus per kata; kata terlalu panjang dipecah per huruf; baris terakhir yang tak muat diakhiri "…". */
+function wrapLines(text: string, maxW: number, maxLines: number, width: (s: string) => number): string[] {
+  const words = text.split(/s+/).filter(Boolean)
+  const lines: string[] = []
+  let cur = ''
+  const pushHard = (word: string) => {
+    let chunk = ''
+    for (const ch of word) {
+      if (width(chunk + ch) > maxW && chunk) { lines.push(chunk); chunk = ch } else chunk += ch
+    }
+    cur = chunk
+  }
+  for (const word of words) {
+    const tryLine = cur ? `${cur} ${word}` : word
+    if (width(tryLine) <= maxW) { cur = tryLine; continue }
+    if (cur) lines.push(cur)
+    cur = ''
+    if (width(word) > maxW) pushHard(word)
+    else cur = word
+  }
+  if (cur) lines.push(cur)
+  if (lines.length <= maxLines) return lines
+  const kept = lines.slice(0, maxLines)
+  let last = kept[maxLines - 1]!
+  while (last && width(last + '…') > maxW) last = last.slice(0, -1).trimEnd()
+  kept[maxLines - 1] = last + '…'
+  return kept
 }

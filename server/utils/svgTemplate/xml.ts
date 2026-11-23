@@ -36,7 +36,7 @@ export function textContent(n: El): string {
   return (n.children ?? []).map((c: any) => (isEl(c) ? textContent(c) : (c.text ?? ''))).join('')
 }
 
-const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+export const escapeXml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /** Ganti seluruh isi elemen dengan satu simpul teks (di-escape saat serialisasi). */
 export function setTextContent(n: El, s: string) {

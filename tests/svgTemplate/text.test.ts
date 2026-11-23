@@ -35,7 +35,7 @@ describe('fillSinglePage', () => {
   })
 
   it('escapes xml characters in values', () => {
-    const out = fillSinglePage(svg(box('a', 10, 10, 100, 12, '{{klien.nama}}')), { values: { 'klien.nama': 'CV Maju & Jaya <Bali>' }, measure })
+    const out = fillSinglePage(svg(box('a', 10, 10, 300, 12, '{{klien.nama}}')), { values: { 'klien.nama': 'CV Maju & Jaya <Bali>' }, measure })
     expect(textOf(texts(out)[0])).toBe('CV Maju & Jaya <Bali>')
   })
 
