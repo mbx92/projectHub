@@ -177,6 +177,8 @@ export const invoices = pgTable('invoices', {
   status: invoiceStatusEnum('status').notNull().default('draf'),
   sentAt: timestamp('sent_at', { withTimezone: true }),
   paidAt: timestamp('paid_at', { withTimezone: true }),
+  /** Template dokumen yang dibekukan saat invoice terkirim; null = layout bawaan. */
+  templateRef: jsonb('template_ref').$type<TemplateRef | null>(),
   ...audit,
 }, t => [uniqueIndex('invoices_number_uq').on(t.number), index('invoices_term_idx').on(t.termId)])
 
@@ -198,6 +200,8 @@ export const payments = pgTable('payments', {
   method: varchar('metode', { length: 60 }).notNull(),
   proofUrl: text('bukti_url'),
   notes: text('catatan'),
+  /** Template kuitansi yang dibekukan saat pembayaran dicatat; null = layout bawaan. */
+  templateRef: jsonb('template_ref').$type<TemplateRef | null>(),
   ...audit,
 })
 

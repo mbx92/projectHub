@@ -6,7 +6,8 @@ import type { Content } from 'pdfmake/interfaces'
 import { fillSinglePage } from './svgTemplate/text'
 import { TemplateError } from './svgTemplate/types'
 import type { Measure } from './svgTemplate/types'
-import { num, parentMap, parseSvg, textBox, textContent, walk } from './svgTemplate/xml'
+import { isiBox } from './svgTemplate/box'
+import { parseSvg } from './svgTemplate/xml'
 
 const require = createRequire(import.meta.url)
 
@@ -91,18 +92,9 @@ export async function svgPagesToPdf(pages: string[], title: string): Promise<Buf
 
 /** Margin isi dari kotak teks `{{isi}}` pada bingkai. */
 function contentMargins(svg: string): [number, number, number, number] {
-  const root = parseSvg(svg)
-  const parents = parentMap(root)
-  let found: [number, number, number, number] | null = null
-  walk(root, (n) => {
-    if (found || n.name !== 'text' || !/\{\{\s*isi\s*\}\}/.test(textContent(n))) return
-    const box = textBox(n, parents)
-    if (!box) return
-    const [x, y, w, h] = [num(box.attr.x), num(box.attr.y), num(box.attr.width), num(box.attr.height)]
-    found = [x, y, PAGE.width - x - w, PAGE.height - y - h]
-  })
-  if (!found) throw new TemplateError('missing_placeholder', 'Bingkai dokumen harus memiliki kotak teks {{isi}}.')
-  return found
+  const b = isiBox(parseSvg(svg))
+  if (!b) throw new TemplateError('missing_placeholder', 'Bingkai dokumen harus memiliki kotak teks {{isi}}.')
+  return [b.x, b.y, PAGE.width - b.x - b.width, PAGE.height - b.y - b.height]
 }
 
 export interface FrameOptions { images?: Record<string, string | null> }

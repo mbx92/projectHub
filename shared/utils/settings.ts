@@ -19,7 +19,24 @@ export interface BusinessProfile {
 export interface DocLayoutSnapshot {
   business: Pick<BusinessProfile, 'name' | 'npwp' | 'email' | 'whatsapp' | 'address' | 'logoKey' | 'signatureKey' | 'signerName' | 'signerTitle'>
   footer: string
+  /** Template dokumen yang aktif saat difinalkan; dokumen Final tetap memakainya. */
+  template?: TemplateRef | null
 }
+
+/** Template dokumen dari Penpot (SVG). Lihat docs/superpowers/specs/2026-11-23-penpot-document-templates-design.md */
+export type TemplateKind = 'invoice' | 'kuitansi' | 'dokumen'
+export type TemplatePageKey = 'halaman-1' | 'halaman-lanjutan'
+export interface TemplateRef {
+  version: number
+  pages: Partial<Record<TemplatePageKey, string>>
+  uploadedAt: string
+  uploadedBy: number
+}
+export interface DocTemplatesSetting {
+  active: Partial<Record<TemplateKind, TemplateRef>>
+  draft: Partial<Record<TemplateKind, TemplateRef>>
+}
+export const TEMPLATE_KINDS: TemplateKind[] = ['invoice', 'kuitansi', 'dokumen']
 
 export const DEFAULT_DOC_FOOTER = '{nama} · {nomor}'
 
@@ -69,7 +86,8 @@ export const DEFAULT_NOTIF_PREFS: Record<NotifEvent, NotifPref> = {
 
 export const EXPENSE_CATEGORIES = ['Server & hosting', 'Domain', 'Lisensi & software', 'Honor freelancer', 'Transportasi', 'Konsumsi', 'Perangkat', 'Pemasaran', 'Operasional', 'Lainnya'] as const
 
-export const DEFAULT_SETTINGS: { business: BusinessProfile, invoice: InvoiceSettings } = {
+export const DEFAULT_SETTINGS: { business: BusinessProfile, invoice: InvoiceSettings, docTemplates: DocTemplatesSetting } = {
+  docTemplates: { active: {}, draft: {} },
   business: {
     name: 'OCN Development',
     legalForm: 'Perorangan / UMKM',

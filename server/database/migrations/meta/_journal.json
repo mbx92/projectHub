@@ -43,6 +43,13 @@
       "when": 1795343189886,
       "tag": "0005_bug_checklist",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795437731875,
+      "tag": "0006_dear_nebula",
+      "breakpoints": true
     }
   ]
 }
