@@ -9,6 +9,10 @@ export interface DocRenderCtx {
   title: string
   /** Nama pihak klien untuk kolom tanda tangan. */
   clientName: string | null
+  /** Nama proyek (penanda {{proyek.nama}} pada bingkai). */
+  projectName: string
+  /** Template bingkai (draf: template aktif; final: yang dibekukan). Null = layout bawaan. */
+  template: TemplateRef | null
 }
 
 export async function liveLayout(): Promise<DocLayoutSnapshot> {
@@ -16,6 +20,7 @@ export async function liveLayout(): Promise<DocLayoutSnapshot> {
   return {
     business: { name: b.name, npwp: b.npwp, email: b.email, whatsapp: b.whatsapp, address: b.address, logoKey: b.logoKey, signatureKey: b.signatureKey, signerName: b.signerName, signerTitle: b.signerTitle },
     footer: b.docFooter?.trim() || DEFAULT_DOC_FOOTER,
+    template: await activeTemplate('dokumen'),
   }
 }
 
@@ -31,6 +36,8 @@ export async function docRenderCtx(row: DocRow, projectName: string, clientName:
     docNumber: row.docNumber,
     title: row.name,
     clientName,
+    projectName,
+    template: layout.template ?? null,
   }
 }
 

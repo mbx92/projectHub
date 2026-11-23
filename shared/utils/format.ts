@@ -132,3 +132,25 @@ export function monthLabel(key: string, long = false): string {
   const [y, m] = key.split('-').map(Number)
   return `${(long ? MONTHS_LONG : MONTHS_SHORT)[m! - 1]} ${y}`
 }
+
+/** Terbilang rupiah dalam Bahasa Indonesia ("Enam juta"). */
+const SATUAN = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas']
+function words(n: number): string {
+  if (n < 12) return SATUAN[n]!
+  if (n < 20) return `${words(n - 10)} belas`
+  if (n < 100) return `${words(Math.floor(n / 10))} puluh ${words(n % 10)}`
+  if (n < 200) return `seratus ${words(n - 100)}`
+  if (n < 1000) return `${words(Math.floor(n / 100))} ratus ${words(n % 100)}`
+  if (n < 2000) return `seribu ${words(n - 1000)}`
+  if (n < 1e6) return `${words(Math.floor(n / 1000))} ribu ${words(n % 1000)}`
+  if (n < 1e9) return `${words(Math.floor(n / 1e6))} juta ${words(n % 1e6)}`
+  if (n < 1e12) return `${words(Math.floor(n / 1e9))} miliar ${words(n % 1e9)}`
+  return `${words(Math.floor(n / 1e12))} triliun ${words(n % 1e12)}`
+}
+
+export function terbilang(n: number): string {
+  const v = Math.floor(Math.abs(n))
+  if (v === 0) return 'nol'
+  const s = words(v).replace(/\s+/g, ' ').trim()
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}

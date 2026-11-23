@@ -113,7 +113,14 @@ export function footer(text: string) {
   })
 }
 
+/** Invoice: template Penpot bila ada (beku saat terkirim; draf memakai template aktif), selain itu layout bawaan. */
 export async function invoicePdf(data: LoadedInvoice): Promise<Buffer> {
+  const ref = data.invoice.templateRef ?? (data.invoice.status === 'draf' ? await activeTemplate('invoice') : null)
+  if (!ref) return builtinInvoicePdf(data)
+  return renderWithFallback(() => renderInvoiceTemplate(data, ref), () => builtinInvoicePdf(data), `invoice ${data.invoice.number}`)
+}
+
+async function builtinInvoicePdf(data: LoadedInvoice): Promise<Buffer> {
   const [business, invSettings] = await Promise.all([getSetting('business'), getSetting('invoice')])
   const { invoice: inv, items, client, project, bank } = data
   const qris = inv.showQris ? await storedImage(invSettings.qrisKey) : null
@@ -177,7 +184,14 @@ export async function invoicePdf(data: LoadedInvoice): Promise<Buffer> {
   return renderPdf({ content, footer: footer(`${business.name} · ${inv.number}`), info: { title: inv.number } })
 }
 
+/** Kuitansi: template Penpot yang dibekukan saat pembayaran dicatat, selain itu layout bawaan. */
 export async function receiptPdf(data: LoadedInvoice, paymentId: number): Promise<Buffer> {
+  const ref = data.payments.find(p => p.id === paymentId)?.templateRef
+  if (!ref) return builtinReceiptPdf(data, paymentId)
+  return renderWithFallback(() => renderReceiptTemplate(data, paymentId, ref), () => builtinReceiptPdf(data, paymentId), `kuitansi ${data.invoice.number}#${paymentId}`)
+}
+
+async function builtinReceiptPdf(data: LoadedInvoice, paymentId: number): Promise<Buffer> {
   const business = await getSetting('business')
   const pay = data.payments.find(p => p.id === paymentId)
   if (!pay) notFound('Pembayaran')
@@ -196,25 +210,4 @@ export async function receiptPdf(data: LoadedInvoice, paymentId: number): Promis
     { columns: [{ width: '*', text: '' }, await signatureBlock(business, `${business.address ? business.address.split('\n')[0] + ', ' : ''}${dateLongId(pay.date)}`)] },
   ]
   return renderPdf({ content, footer: footer(`${business.name} · ${no}`), info: { title: no } })
-}
-
-const SATUAN = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas']
-function words(n: number): string {
-  if (n < 12) return SATUAN[n]!
-  if (n < 20) return `${words(n - 10)} belas`
-  if (n < 100) return `${words(Math.floor(n / 10))} puluh ${words(n % 10)}`
-  if (n < 200) return `seratus ${words(n - 100)}`
-  if (n < 1000) return `${words(Math.floor(n / 100))} ratus ${words(n % 100)}`
-  if (n < 2000) return `seribu ${words(n - 1000)}`
-  if (n < 1e6) return `${words(Math.floor(n / 1000))} ribu ${words(n % 1000)}`
-  if (n < 1e9) return `${words(Math.floor(n / 1e6))} juta ${words(n % 1e6)}`
-  if (n < 1e12) return `${words(Math.floor(n / 1e9))} miliar ${words(n % 1e9)}`
-  return `${words(Math.floor(n / 1e12))} triliun ${words(n % 1e12)}`
-}
-
-export function terbilang(n: number): string {
-  const v = Math.floor(Math.abs(n))
-  if (v === 0) return 'nol'
-  const s = words(v).replace(/\s+/g, ' ').trim()
-  return s.charAt(0).toUpperCase() + s.slice(1)
 }

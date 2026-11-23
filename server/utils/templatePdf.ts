@@ -1,0 +1,171 @@
+/** Render PDF dari template SVG Penpot: font Plus Jakarta Sans dibundel, ukur teks, halaman SVG, dan bingkai dokumen. */
+import { createRequire } from 'node:module'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import type { Content } from 'pdfmake/interfaces'
+import { fillSinglePage } from './svgTemplate/text'
+import { TemplateError } from './svgTemplate/types'
+import type { Measure } from './svgTemplate/types'
+import { isiBox } from './svgTemplate/box'
+import { parseSvg, textContent, walk } from './svgTemplate/xml'
+
+const require = createRequire(import.meta.url)
+
+const FONT_FILES = {
+  'PJS-400': 'PlusJakartaSans-400.woff',
+  'PJS-600': 'PlusJakartaSans-600.woff',
+  'PJS-700': 'PlusJakartaSans-700.woff',
+  'PJS-800': 'PlusJakartaSans-800.woff',
+} as const
+
+let buffers: Record<string, Buffer> | null = null
+const fontkitCache = new Map<string, any>()
+let printer: any = null
+
+async function readFontFile(file: string): Promise<Buffer> {
+  // Di server Nitro, aset dibundel lewat penyimpanan 'assets:server'; di luar Nitro (tes) baca dari disk.
+  if (typeof useStorage === 'function') {
+    const raw = await useStorage('assets:server').getItemRaw(`fonts:${file}`).catch(() => null)
+    if (raw) return Buffer.from(raw as Uint8Array)
+  }
+  return readFile(join(process.cwd(), 'server', 'assets', 'fonts', file))
+}
+
+/** Muat font sekali. Wajib dipanggil (await) sebelum pdfMeasure / render. */
+export async function ensureTemplateFonts(): Promise<void> {
+  if (buffers) return
+  const entries = await Promise.all(Object.entries(FONT_FILES).map(async ([k, f]) => [k, await readFontFile(f)] as const))
+  buffers = Object.fromEntries(entries)
+}
+
+function fontFor(family: string) {
+  if (!buffers) throw new Error('Font template belum dimuat: panggil ensureTemplateFonts() lebih dulu.')
+  const key = family in FONT_FILES ? family : 'PJS-400'
+  let font = fontkitCache.get(key)
+  if (!font) {
+    font = require('@foliojs-fork/fontkit').create(buffers[key]!)
+    fontkitCache.set(key, font)
+  }
+  return font
+}
+
+/** Lebar teks (pt) memakai metrik font yang sama dengan yang dicetak. */
+export const pdfMeasure: Measure = (text, family, size) => {
+  const font = fontFor(family)
+  return (font.layout(text).advanceWidth * size) / font.unitsPerEm
+}
+
+/**
+ * Font yang dibundel hanya memuat huruf Latin. Karakter di luar itu (≥ → Ž …) akan tercetak sebagai kotak kosong,
+ * jadi tolak render template (pemanggil jatuh ke layout bawaan) daripada mencetak data yang rusak.
+ */
+export function assertGlyphs(strings: Iterable<string>): void {
+  const font = fontFor('PJS-400')
+  for (const str of strings) {
+    for (const ch of str) {
+      const cp = ch.codePointAt(0)!
+      if (cp <= 0x20 || (cp >= 0x7f && cp <= 0xa0) || cp === 0xad || (cp >= 0x200b && cp <= 0x200f)) continue
+      if (!font.hasGlyphForCodePoint(cp)) throw new TemplateError('unsupported_glyph', `Karakter "${ch}" (U+${cp.toString(16).toUpperCase().padStart(4, '0')}) tidak tersedia di font template.`)
+    }
+  }
+}
+
+function svgTexts(svg: string): string[] {
+  const out: string[] = []
+  walk(parseSvg(svg), (n) => { if (n.name === 'text') out.push(textContent(n)) })
+  return out
+}
+
+/** Semua string pada konten pdfmake (teks, daftar, tabel, kolom). */
+function contentStrings(c: unknown, out: string[] = []): string[] {
+  if (typeof c === 'string') out.push(c)
+  else if (Array.isArray(c)) c.forEach(x => contentStrings(x, out))
+  else if (c && typeof c === 'object') for (const [k, v] of Object.entries(c)) if (k === 'text' || (v && typeof v === 'object')) contentStrings(v, out)
+  return out
+}
+
+function getPrinter() {
+  if (printer) return printer
+  if (!buffers) throw new Error('Font template belum dimuat: panggil ensureTemplateFonts() lebih dulu.')
+  const PdfPrinter = require('pdfmake')
+  const vfsMod = require('pdfmake/build/vfs_fonts.js')
+  const vfs: Record<string, string> = vfsMod.pdfMake?.vfs ?? vfsMod
+  const f = (n: string) => Buffer.from(vfs[n]!, 'base64')
+  const fonts: Record<string, Record<string, Buffer>> = {
+    Roboto: { normal: f('Roboto-Regular.ttf'), bold: f('Roboto-Medium.ttf'), italics: f('Roboto-Italic.ttf'), bolditalics: f('Roboto-MediumItalic.ttf') },
+  }
+  for (const k of Object.keys(FONT_FILES)) fonts[k] = { normal: buffers[k]!, bold: buffers[k]!, italics: buffers[k]!, bolditalics: buffers[k]! }
+  // Isi dokumen memakai PJS-400 sebagai font dasar: `bold` harus benar-benar tebal (700), miring tidak tersedia.
+  fonts['PJS-400'] = { normal: buffers['PJS-400']!, bold: buffers['PJS-700']!, italics: buffers['PJS-400']!, bolditalics: buffers['PJS-700']! }
+  printer = new PdfPrinter(fonts)
+  return printer
+}
+
+function toBuffer(def: Record<string, unknown>): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const pdf = getPrinter().createPdfKitDocument(def)
+    const chunks: Buffer[] = []
+    pdf.on('data', (c: Buffer) => chunks.push(c))
+    pdf.on('end', () => resolve(Buffer.concat(chunks)))
+    pdf.on('error', reject)
+    pdf.end()
+  })
+}
+
+const PAGE = { width: 595, height: 842 }
+
+/** Coba render dari template; bila gagal apa pun, catat dan pakai layout bawaan (pembuatan dokumen tidak boleh gagal karena template). */
+export async function renderWithFallback<T>(primary: () => Promise<T>, fallback: () => Promise<T>, label: string): Promise<T> {
+  try {
+    return await primary()
+  } catch (e) {
+    console.error(`[template] ${label}: render template gagal, memakai layout bawaan`, e)
+    return fallback()
+  }
+}
+
+/** Satu halaman PDF per SVG (A4, tanpa margin). */
+export async function svgPagesToPdf(pages: string[], title: string): Promise<Buffer> {
+  await ensureTemplateFonts()
+  assertGlyphs(pages.flatMap(svgTexts))
+  return toBuffer({
+    pageSize: PAGE,
+    pageMargins: 0,
+    defaultStyle: { font: 'PJS-400', fontSize: 10 },
+    content: pages.map((svg, i): Content => ({ svg, width: PAGE.width, ...(i ? { pageBreak: 'before' as const } : {}) })),
+    info: { title },
+  })
+}
+
+/** Margin isi dari kotak teks `{{isi}}` pada bingkai. */
+function contentMargins(svg: string): [number, number, number, number] {
+  const b = isiBox(parseSvg(svg))
+  if (!b) throw new TemplateError('missing_placeholder', 'Bingkai dokumen harus memiliki kotak teks {{isi}}.')
+  return [b.x, b.y, PAGE.width - b.x - b.width, PAGE.height - b.y - b.height]
+}
+
+export interface FrameOptions { images?: Record<string, string | null> }
+
+/**
+ * Dokumen berbingkai: isi (konten pdfmake) mengalir di kotak {{isi}}; SVG bingkai menjadi latar tiap halaman.
+ * Dua lintasan: lintasan pertama menghitung jumlah halaman agar {{halaman}} ("Hal. i dari n") benar.
+ */
+export async function framedDocPdf(frames: { first: string, next?: string }, values: Record<string, string>, body: Content[], title: string, opts: FrameOptions = {}): Promise<Buffer> {
+  await ensureTemplateFonts()
+  const margins = contentMargins(frames.first)
+  assertGlyphs([...Object.values(values), ...contentStrings(body)])
+  const base = { pageSize: PAGE, pageMargins: margins, defaultStyle: { font: 'PJS-400', fontSize: 10 }, content: body, info: { title } }
+
+  let total = 1
+  await toBuffer({ ...base, header: (_cp: number, pc: number) => { total = pc; return { text: '' } } })
+
+  const cache = new Map<number, string>()
+  const svgFor = (cp: number) => {
+    if (!cache.has(cp)) {
+      const src = cp === 1 ? frames.first : (frames.next ?? frames.first)
+      cache.set(cp, fillSinglePage(src, { values: { ...values, isi: '', halaman: `Hal. ${cp} dari ${total}` }, images: opts.images, measure: pdfMeasure }))
+    }
+    return cache.get(cp)!
+  }
+  return toBuffer({ ...base, background: (cp: number) => ({ svg: svgFor(cp), width: PAGE.width, absolutePosition: { x: 0, y: 0 } }) })
+}

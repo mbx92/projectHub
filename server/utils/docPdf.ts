@@ -53,7 +53,6 @@ function blocks(nodes: DocNode[] | undefined): Content[] {
 
 export async function docToPdf(content: DocNode, ctx: DocRenderCtx): Promise<Buffer> {
   const business = businessForPdf(ctx.business)
-  const head = await letterhead(business, '', ctx.docNumber ?? '')
   const sig = await signatureBlock(business, `Pihak Pertama`)
   const body: Content[] = [
     ...blocks(content.content),
@@ -71,11 +70,17 @@ export async function docToPdf(content: DocNode, ctx: DocRenderCtx): Promise<Buf
       ],
     } as Content,
   ]
-  return renderPdf({
-    pageMargins: [40, 110, 40, 56],
-    header: { ...(head as object), margin: [40, 24, 40, 0] } as Content,
-    content: body,
-    footer: footer(ctx.footer),
-    info: { title: ctx.title },
-  })
+  const builtin = async () => {
+    const head = await letterhead(business, '', ctx.docNumber ?? '')
+    return renderPdf({
+      pageMargins: [40, 110, 40, 56],
+      header: { ...(head as object), margin: [40, 24, 40, 0] } as Content,
+      content: body,
+      footer: footer(ctx.footer),
+      info: { title: ctx.title },
+    })
+  }
+  const ref = ctx.template
+  if (!ref) return builtin()
+  return renderWithFallback(() => renderDocTemplate(ref, ctx, ctx.projectName, body, ctx.business), builtin, `dokumen ${ctx.docNumber ?? ctx.title}`)
 }

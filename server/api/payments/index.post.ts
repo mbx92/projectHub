@@ -39,14 +39,14 @@ export default defineEventHandler(async (event) => {
     if (inv.status === 'lunas') throw createError({ statusCode: 422, statusMessage: 'Invoice sudah lunas dan tidak bisa ditagih ulang.' })
     if (inv.status === 'batal') throw createError({ statusCode: 422, statusMessage: 'Invoice sudah dibatalkan.' })
     if (inv.status === 'draf') {
-      await tx.update(schema.invoices).set({ status: 'terkirim', sentAt: new Date() }).where(eq(schema.invoices.id, inv.id))
+      await tx.update(schema.invoices).set({ status: 'terkirim', sentAt: new Date(), templateRef: inv.templateRef ?? await activeTemplate('invoice') }).where(eq(schema.invoices.id, inv.id))
     }
     const paidBefore = (await tx.select({ a: schema.payments.amount }).from(schema.payments).where(eq(schema.payments.invoiceId, inv.id))).reduce((a, p) => a + p.a, 0)
     if (paidBefore + body.amount > inv.total) {
       throw createError({ statusCode: 422, statusMessage: `Nominal melebihi sisa tagihan (${rupiah(inv.total - paidBefore)}).` })
     }
     const [pay] = await tx.insert(schema.payments).values({
-      invoiceId: inv.id, amount: body.amount, date: body.date, method: body.method, proofUrl: body.proofUrl, notes: body.notes, createdBy: me.id,
+      invoiceId: inv.id, amount: body.amount, date: body.date, method: body.method, proofUrl: body.proofUrl, notes: body.notes, templateRef: await activeTemplate('kuitansi'), createdBy: me.id,
     }).returning()
     const [project] = await tx.select({ name: schema.projects.name }).from(schema.projects).where(eq(schema.projects.id, inv.projectId))
     await addLedger(tx, { date: body.date, type: 'masuk', amount: body.amount, refType: 'payment', refId: pay!.id, description: `Pembayaran ${inv.number} · ${project?.name ?? ''}`, projectId: inv.projectId }, me.id)
