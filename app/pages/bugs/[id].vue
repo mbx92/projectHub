@@ -81,6 +81,14 @@ async function delFile(aid: number, name: string) {
   const ok = await confirm({ variant: 'danger', title: `Hapus lampiran ${name}?`, confirmText: 'Hapus', action: () => $fetch<unknown>(`/api/attachments/${aid}`, { method: 'DELETE' }) })
   if (ok) await refresh()
 }
+async function removeBug() {
+  const ok = await confirm({
+    variant: 'danger', title: `Hapus ${bug.value.code}?`,
+    message: 'Item beserta komentar dan lampirannya dihapus permanen dan tidak bisa dikembalikan.', confirmText: 'Hapus',
+    action: () => $fetch<unknown>(`/api/bugs/${id}`, { method: 'DELETE' }),
+  })
+  if (ok) { toast.success(`${bug.value.code} dihapus`); await navigateTo(`/bugs?project=${bug.value.projectId}`) }
+}
 const isImage = (m: string | null) => !!m && m.startsWith('image/')
 </script>
 
@@ -98,6 +106,9 @@ const isImage = (m: string | null) => !!m && m.startsWith('image/')
           <span v-if="bug.module" class="badge bg-soft-2 text-ink-2">{{ bug.module }}</span>
           <span v-if="bug.blocksTerm" class="badge bg-warning-50 text-warning-700">Menghambat termin</span>
         </div>
+      </template>
+      <template #actions>
+        <button v-if="can.editAll" type="button" class="btn-secondary !text-danger-700 hover:!bg-danger-50" @click="removeBug">Hapus</button>
       </template>
     </UiPageHeader>
 
