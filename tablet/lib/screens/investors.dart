@@ -19,7 +19,7 @@ class _InvestorsScreenState extends State<InvestorsScreen> {
     showDialog<void>(context: context, builder: (ctx) => AlertDialog(
       title: Text('Setoran modal · ${inv['name']}'),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
-        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal (Rp)')),
+        TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [ThousandsFormatter()], decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')),
         const SizedBox(height: 12),
         TextField(controller: purpose, decoration: const InputDecoration(labelText: 'Peruntukan')),
       ]),
@@ -28,7 +28,7 @@ class _InvestorsScreenState extends State<InvestorsScreen> {
         FilledButton(onPressed: () async {
           Navigator.pop(ctx);
           await guard(context, () async {
-            await Api.i.post('/api/capital-deposits', {'investorId': inv['investorId'] ?? inv['id'], 'date': DateTime.now().toIso8601String().substring(0, 10), 'amount': int.tryParse(amount.text) ?? 0, 'purpose': purpose.text.isEmpty ? null : purpose.text});
+            await Api.i.post('/api/capital-deposits', {'investorId': inv['investorId'] ?? inv['id'], 'date': DateTime.now().toIso8601String().substring(0, 10), 'amount': parseMoney(amount.text), 'purpose': purpose.text.isEmpty ? null : purpose.text});
             setState(() => k = UniqueKey());
           }, ok: 'Setoran dicatat.');
         }, child: const Text('Simpan')),
@@ -79,11 +79,16 @@ class _InvestorsScreenState extends State<InvestorsScreen> {
                 ),
               ]),
               const SizedBox(height: 12),
-              Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const H('Riwayat Setoran Modal'),
-                if (deps.isEmpty) const Empty('Belum ada setoran.'),
-                for (final x in deps) ListTile(contentPadding: EdgeInsets.zero, dense: true, title: Text('${x['name']}'), subtitle: Text('${tgl(x['date'])} · ${x['purpose'] ?? ''}'), trailing: Text(rp(x['amount']), style: const TextStyle(fontWeight: FontWeight.w700))),
-              ])),
+              const H('Riwayat Setoran Modal'),
+              const SizedBox(height: 8),
+              deps.isEmpty
+                  ? const Panel(child: Empty('Belum ada setoran.'))
+                  : AppTable(
+                      head: const ['Tanggal', 'Investor', 'Peruntukan', 'Nominal'],
+                      flex: const [2, 3, 4, 2],
+                      right: const [3],
+                      rows: [for (final x in deps) [tgl(x['date']), '${x['name']}', '${x['purpose'] ?? '—'}', rp(x['amount'])]],
+                    ),
             ]),
           );
         },

@@ -7,7 +7,7 @@ class _Item {
   final desc = TextEditingController();
   final qty = TextEditingController(text: '1');
   final price = TextEditingController();
-  num get total => (num.tryParse(qty.text) ?? 0) * (num.tryParse(price.text) ?? 0);
+  num get total => (num.tryParse(qty.text) ?? 0) * parseMoney(price.text);
 }
 
 /// T09 · Buat Invoice
@@ -35,7 +35,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     await guard(context, () async {
       final r = await Api.i.post('/api/invoices', {
         'termId': termId, 'issueDate': iso(issue), 'dueDate': iso(due),
-        'items': [for (final i in items) {'description': i.desc.text, 'qty': num.tryParse(i.qty.text) ?? 0, 'price': num.tryParse(i.price.text) ?? 0}],
+        'items': [for (final i in items) {'description': i.desc.text, 'qty': num.tryParse(i.qty.text) ?? 0, 'price': parseMoney(i.price.text)}],
         'discount': 0, 'taxPercent': 0, 'notes': notes.text.isEmpty ? null : notes.text, 'bankAccountId': bankId, 'showQris': qris,
       });
       if (send) await Api.i.post('/api/invoices/${asMap(r)['id']}/send', {});
@@ -77,7 +77,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                       termId = v;
                       final t = myTerms.firstWhere((x) => n(x['id']) == v);
                       items.first.desc.text = '${t['name']} — ${proj?['name'] ?? ''}';
-                      items.first.price.text = '${n(t['amount']).round()}';
+                      items.first.price.text = numStr(n(t['amount']));
                       items.first.qty.text = '1';
                     }))),
                   ]),
@@ -104,7 +104,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                     const SizedBox(width: 8),
                     Expanded(child: TextField(controller: items[i].qty, keyboardType: TextInputType.number, onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'Qty'))),
                     const SizedBox(width: 8),
-                    Expanded(flex: 2, child: TextField(controller: items[i].price, keyboardType: TextInputType.number, onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'Harga'))),
+                    Expanded(flex: 2, child: TextField(controller: items[i].price, keyboardType: TextInputType.number, inputFormatters: [ThousandsFormatter()], onChanged: (_) => setState(() {}), decoration: const InputDecoration(labelText: 'Harga', prefixText: 'Rp '))),
                     IconButton(onPressed: items.length > 1 ? () => setState(() => items.removeAt(i)) : null, icon: const Icon(Icons.close)),
                   ])),
                   TextButton(onPressed: () => setState(() => items.add(_Item())), child: const Text('+ Tambah item')),

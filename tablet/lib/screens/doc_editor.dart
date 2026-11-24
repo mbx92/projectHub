@@ -288,14 +288,76 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
     _changed();
   }
 
+  J _cell(String t, bool h) => {'type': h ? 'tableHeader' : 'tableCell', 'attrs': {'colspan': 1, 'rowspan': 1}, 'content': [{'type': 'paragraph', if (t.isNotEmpty) 'content': [{'type': 'text', 'text': t}]}]};
+
   void _insertTable() {
     final list = content['content'] as List;
     final i = focusedTop == null ? list.length - 1 : list.indexWhere((e) => identical(e, focusedTop));
-    J cell(String t, bool h) => {'type': h ? 'tableHeader' : 'tableCell', 'attrs': {'colspan': 1, 'rowspan': 1}, 'content': [{'type': 'paragraph', if (t.isNotEmpty) 'content': [{'type': 'text', 'text': t}]}]};
     list.insert(i + 1, {'type': 'table', 'content': [
-      {'type': 'tableRow', 'content': [cell('Kolom 1', true), cell('Kolom 2', true), cell('Kolom 3', true)]},
-      {'type': 'tableRow', 'content': [cell('', false), cell('', false), cell('', false)]},
+      {'type': 'tableRow', 'content': [for (var c = 1; c <= 3; c++) _cell('Kolom $c', true)]},
+      for (var r = 0; r < 2; r++) {'type': 'tableRow', 'content': [for (var c = 0; c < 3; c++) _cell('', false)]},
     ]});
+    _changed();
+  }
+
+  bool get inTable => focusedTop?['type'] == 'table';
+
+  /// Posisi (baris, kolom) sel yang sedang difokus di tabel aktif.
+  (int, int)? _cellPos() {
+    final t = focusedTop;
+    final p = focused;
+    if (t == null || p == null || t['type'] != 'table') return null;
+    final rows = (t['content'] as List).whereType<J>().toList();
+    for (var r = 0; r < rows.length; r++) {
+      final cells = (rows[r]['content'] as List).whereType<J>().toList();
+      for (var c = 0; c < cells.length; c++) {
+        if (identical(_firstPara(cells[c]), p)) return (r, c);
+      }
+    }
+    return null;
+  }
+
+  void _tableOp(String op) {
+    final t = focusedTop;
+    if (t == null || t['type'] != 'table') return;
+    final rows = (t['content'] as List);
+    final pos = _cellPos() ?? (rows.length - 1, 0);
+    final ncols = ((rows.first as J)['content'] as List).length;
+    switch (op) {
+      case 'rowAdd':
+        rows.insert(pos.$1 + 1, {'type': 'tableRow', 'content': [for (var c = 0; c < ncols; c++) _cell('', false)]});
+      case 'rowDel':
+        if (rows.length <= 1) { rows.clear(); _dropTable(t); return; }
+        rows.removeAt(pos.$1);
+      case 'colAdd':
+        for (final r in rows.whereType<J>()) {
+          final cells = r['content'] as List;
+          final head = pos.$1 < rows.length && (cells.isNotEmpty && (cells.first as J)['type'] == 'tableHeader');
+          cells.insert((pos.$2 + 1).clamp(0, cells.length), _cell(head ? 'Kolom ${cells.length + 1}' : '', head));
+        }
+      case 'colDel':
+        if (ncols <= 1) { _dropTable(t); return; }
+        for (final r in rows.whereType<J>()) { (r['content'] as List).removeAt(pos.$2.clamp(0, ncols - 1)); }
+      case 'header':
+        final first = (rows.first as J)['content'] as List;
+        final isHead = first.every((c) => (c as J)['type'] == 'tableHeader');
+        for (final c in first) { (c as J)['type'] = isHead ? 'tableCell' : 'tableHeader'; }
+      case 'drop':
+        _dropTable(t);
+        return;
+    }
+    ctrls.clear();
+    foci.clear();
+    focused = null;
+    _changed();
+  }
+
+  void _dropTable(J t) {
+    (content['content'] as List).removeWhere((e) => identical(e, t));
+    ctrls.clear();
+    foci.clear();
+    focused = null;
+    focusedTop = null;
     _changed();
   }
 
@@ -356,7 +418,7 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
             const SizedBox(width: 10),
             _tb('Poin', ro ? null : () => _toList('bulletList')),
             _tb('Nomor', ro ? null : () => _toList('orderedList')),
-            _tb('Tabel', ro ? null : _insertTable),
+            _tb('Tabel', ro || inTable ? null : _insertTable),
             const SizedBox(width: 10),
             _tb('Pena', () => setState(() => tool = tool == Tool.pen ? Tool.text : Tool.pen), icon: Icons.edit, active: tool == Tool.pen),
             _tb('Stabilo', () => setState(() => tool = tool == Tool.highlighter ? Tool.text : Tool.highlighter), icon: Icons.border_color, active: tool == Tool.highlighter),
@@ -365,6 +427,20 @@ class _DocEditorScreenState extends State<DocEditorScreen> {
             const SizedBox(width: 10),
             _tb('', hi > 0 ? () => _restore(hi - 1) : null, icon: Icons.undo),
             _tb('', hi < history.length - 1 ? () => _restore(hi + 1) : null, icon: Icons.redo),
+          ])),
+        ),
+        if (inTable && !ro) Container(
+          color: C.greenSoft,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
+            const Icon(Icons.table_chart_outlined, size: 18, color: C.green), const SizedBox(width: 8),
+            const Text('Tabel', style: TextStyle(fontWeight: FontWeight.w700, color: C.green)), const SizedBox(width: 10),
+            _tb('Baris', () => _tableOp('rowAdd'), icon: Icons.add),
+            _tb('Kolom', () => _tableOp('colAdd'), icon: Icons.add),
+            _tb('Baris', () => _tableOp('rowDel'), icon: Icons.remove),
+            _tb('Kolom', () => _tableOp('colDel'), icon: Icons.remove),
+            _tb('Baris judul', () => _tableOp('header'), icon: Icons.title),
+            _tb('Hapus tabel', () => _tableOp('drop'), icon: Icons.delete_outline),
           ])),
         ),
         const Divider(height: 1),

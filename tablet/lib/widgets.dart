@@ -269,3 +269,46 @@ class _LogoPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter o) => false;
 }
+
+/// Tabel bergaya: kepala berlatar, garis antarbaris, belang-belang, kolom angka rata kanan,
+/// baris "Total" disorot. Sel boleh berupa String atau Widget (mis. Pill).
+class AppTable extends StatelessWidget {
+  final List<String> head;
+  final List<List<dynamic>> rows;
+  final List<int> right;
+  final List<int>? flex;
+  final bool zebra;
+  const AppTable({super.key, required this.head, required this.rows, this.right = const [], this.flex, this.zebra = true});
+
+  @override
+  Widget build(BuildContext context) {
+    TextAlign al(int i) => right.contains(i) ? TextAlign.right : TextAlign.left;
+    Widget cell(dynamic v, int i, {bool bold = false, Color? color}) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          child: v is Widget
+              ? Align(alignment: right.contains(i) ? Alignment.centerRight : Alignment.centerLeft, child: v)
+              : Text('$v', textAlign: al(i), style: TextStyle(fontSize: 13.5, fontWeight: bold ? FontWeight.w700 : FontWeight.w400, color: color ?? C.ink)),
+        );
+    final totalRow = rows.isNotEmpty && rows.last.isNotEmpty && '${rows.last.first}'.toLowerCase() == 'total';
+    return Container(
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.line)),
+      clipBehavior: Clip.antiAlias,
+      child: Table(
+        columnWidths: {for (var i = 0; i < head.length; i++) i: FlexColumnWidth((flex != null && i < flex!.length ? flex![i] : (i == 0 ? 3 : 2)).toDouble())},
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        border: const TableBorder(horizontalInside: BorderSide(color: C.line)),
+        children: [
+          TableRow(
+            decoration: const BoxDecoration(color: Color(0xFFEFF4F3)),
+            children: [for (var i = 0; i < head.length; i++) Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12), child: Text(head[i].toUpperCase(), textAlign: al(i), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: C.mute, letterSpacing: .6)))],
+          ),
+          for (var r = 0; r < rows.length; r++)
+            TableRow(
+              decoration: BoxDecoration(color: totalRow && r == rows.length - 1 ? C.greenSoft : (zebra && r.isOdd ? const Color(0xFFF8FAFB) : Colors.white)),
+              children: [for (var i = 0; i < head.length; i++) cell(i < rows[r].length ? rows[r][i] : '', i, bold: totalRow && r == rows.length - 1, color: i == 0 && !(totalRow && r == rows.length - 1) ? C.green : null)],
+            ),
+        ],
+      ),
+    );
+  }
+}
