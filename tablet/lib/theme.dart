@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class C {
@@ -65,3 +66,17 @@ String tglJam(dynamic v) {
   if (d == null) return '—';
   return '${d.day} ${_bln[d.month - 1]} ${d.year} · ${d.hour.toString().padLeft(2, '0')}.${d.minute.toString().padLeft(2, '0')}';
 }
+
+/// Format angka dengan pemisah ribuan titik saat mengetik (1250000 -> 1.250.000).
+class ThousandsFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue old, TextEditingValue v) {
+    final digits = v.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return const TextEditingValue(text: '');
+    final f = _rp.format(int.parse(digits));
+    return TextEditingValue(text: f, selection: TextSelection.collapsed(offset: f.length));
+  }
+}
+
+String numStr(num v) => _rp.format(v.round());
+int parseMoney(String s) => int.tryParse(s.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;

@@ -22,12 +22,12 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   }
 
   void _pay(Map<String, dynamic> inv) {
-    final amount = TextEditingController(text: '${(n(inv['total']) - n(inv['paid'])).round()}');
+    final amount = TextEditingController(text: numStr(n(inv['total']) - n(inv['paid'])));
     final method = TextEditingController(text: 'Transfer bank');
     showDialog<void>(context: context, builder: (ctx) => AlertDialog(
       title: Text('Catat pembayaran ${inv['number']}'),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
-        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal (Rp)')),
+        TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [ThousandsFormatter()], decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')),
         const SizedBox(height: 12),
         TextField(controller: method, decoration: const InputDecoration(labelText: 'Metode')),
       ]),
@@ -36,7 +36,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         FilledButton(onPressed: () async {
           Navigator.pop(ctx);
           await guard(context, () async {
-            await Api.i.post('/api/payments', {'invoiceId': inv['id'], 'amount': int.tryParse(amount.text) ?? 0, 'date': DateTime.now().toIso8601String().substring(0, 10), 'method': method.text});
+            await Api.i.post('/api/payments', {'invoiceId': inv['id'], 'amount': parseMoney(amount.text), 'date': DateTime.now().toIso8601String().substring(0, 10), 'method': method.text});
             setState(() => reloadKey = UniqueKey());
           }, ok: 'Pembayaran dicatat.');
         }, child: const Text('Simpan')),
