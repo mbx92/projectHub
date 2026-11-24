@@ -55,6 +55,12 @@ export const BUG_STATUS: Record<BugStatus, Tone> = {
   selesai: { label: 'Selesai', fg: '#067647', bg: '#DCFAE6' },
 }
 
+/** Teks tombol developer untuk memajukan status bug (Review → Selesai ditandai pengelola, bukan developer). */
+export const BUG_ADVANCE_LABEL: Partial<Record<BugStatus, string>> = {
+  open: 'Mulai kerjakan',
+  dikerjakan: 'Kirim ke Review',
+}
+
 export const MILESTONE_STATUS: Record<'belum' | 'berjalan' | 'selesai', Tone> = {
   belum: { label: 'Belum', fg: '#344054', bg: '#F2F4F7' },
   berjalan: { label: 'Berjalan', fg: '#175CD3', bg: '#E8F0FE' },

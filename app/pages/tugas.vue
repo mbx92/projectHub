@@ -72,7 +72,7 @@ async function advance(id: number, code: string, to: BugStatus) {
           v-if="nextStatus(b.status) && can('bug', 'ditugaskan')"
           type="button" class="btn-secondary btn-sm" :disabled="busy === b.id"
           @click="advance(b.id, b.code, nextStatus(b.status)!)"
-        >→ {{ BUG_STATUS[nextStatus(b.status)!].label }}</button>
+        >{{ BUG_ADVANCE_LABEL[b.status] }}</button>
         <span v-else-if="b.status === 'review'" class="text-xs text-muted">Menunggu review</span>
       </li>
     </ul>

@@ -74,6 +74,11 @@ function onDrop(e: DragEvent, status: BugStatus) {
   overCol.value = null
 }
 const nextStatus = (s: BugStatus): BugStatus | null => ({ open: 'dikerjakan', dikerjakan: 'review', review: 'selesai', selesai: null } as const)[s]
+/** Admin boleh memajukan semua; developer hanya bug miliknya sampai Review. */
+const canAdvance = (b: { status: BugStatus, assigneeId?: number | null }) => !!nextStatus(b.status)
+  && (isAdmin.value || (can('bug', 'ditugaskan') && b.assigneeId === user.value?.id && nextStatus(b.status) !== 'selesai'))
+const view = ref<'kanban' | 'daftar'>(route.query.view === 'daftar' ? 'daftar' : 'kanban')
+watch(view, v => router.replace({ query: { ...route.query, view: v === 'daftar' ? 'daftar' : undefined } }))
 const showBug = ref(route.query.lapor === '1')
 </script>
 
@@ -96,16 +101,56 @@ const showBug = ref(route.query.lapor === '1')
   </div>
 
   <div class="flex flex-wrap items-center justify-between gap-3">
-    <div role="group" aria-label="Filter tingkat keparahan" class="pill-tabs">
-      <button v-for="c in chips" :key="c.key" type="button" class="pill-tab" :aria-pressed="sev === c.key" @click="sev = c.key">{{ c.label }} · {{ c.count }}</button>
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="text-xs font-semibold text-muted">Keparahan</span>
+      <div role="group" aria-label="Filter tingkat keparahan" class="pill-tabs">
+        <button v-for="c in chips" :key="c.key" type="button" class="pill-tab" :aria-pressed="sev === c.key" @click="sev = c.key">{{ c.label }} · {{ c.count }}</button>
+      </div>
     </div>
-    <div class="flex items-center gap-4">
-      <label class="flex items-center gap-2 text-sm cursor-pointer min-h-11"><input v-model="mine" type="checkbox" class="w-[18px] h-[18px] accent-brand-600">Ditugaskan ke saya</label>
+    <div class="flex flex-wrap items-center gap-4">
+      <div role="group" aria-label="Tampilan" class="pill-tabs">
+        <button type="button" class="pill-tab" :aria-pressed="view === 'kanban'" @click="view = 'kanban'">Kanban</button>
+        <button type="button" class="pill-tab" :aria-pressed="view === 'daftar'" @click="view = 'daftar'">Daftar</button>
+      </div>
+      <label class="flex items-center gap-2 text-sm cursor-pointer min-h-11"><input v-model="mine" type="checkbox" class="w-[18px] h-[18px] accent-brand-600">Milik saya</label>
       <span class="text-xs text-muted">Diurutkan: keparahan, lalu terbaru</span>
     </div>
   </div>
 
-  <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 items-start">
+  <section v-if="view === 'daftar'" aria-label="Daftar item tracker" class="card overflow-x-auto">
+    <table v-if="filtered.length" class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Kode</th><th scope="col">Item</th><th scope="col">Keparahan</th><th scope="col">Status</th>
+          <th scope="col">Ditugaskan</th><th scope="col">Target</th><th scope="col" class="w-36"><span class="sr-only">Aksi</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="b in filtered" :key="b.id">
+          <td class="whitespace-nowrap"><span class="flex items-center gap-1.5"><span class="text-xs font-mono text-muted">{{ b.code }}</span><UiBadge v-if="b.type !== 'bug'" :tone="BUG_TYPE[b.type as BugType]" /></span></td>
+          <td>
+            <div class="flex flex-col gap-0.5 min-w-56">
+              <NuxtLink :to="`/bugs/${b.id}`" class="text-sm font-semibold !text-ink hover:!text-brand-700 break-words">{{ b.title }}</NuxtLink>
+              <span class="text-xs text-muted">{{ b.projectName }}<template v-if="b.module"> · {{ b.module }}</template><template v-if="b.blocksTerm && b.status !== 'selesai'"> · <span class="text-warning-700 font-semibold">hambat termin</span></template></span>
+            </div>
+          </td>
+          <td><UiBadge :tone="BUG_SEVERITY[b.severity]" /></td>
+          <td><UiBadge :tone="BUG_STATUS[b.status]" /></td>
+          <td>
+            <span v-if="b.assigneeName" class="flex items-center gap-2 whitespace-nowrap"><UiAvatar :name="b.assigneeName" :color="b.assigneeColor" :size="24" /><span class="text-sm">{{ b.assigneeName }}</span></span>
+            <span v-else class="text-sm text-muted">—</span>
+          </td>
+          <td class="whitespace-nowrap text-sm" :class="b.status !== 'selesai' && b.targetDate && b.targetDate < todayISO() && 'text-danger-700 font-semibold'">{{ b.targetDate ? dateId(b.targetDate) : '—' }}</td>
+          <td class="text-right">
+            <button v-if="canAdvance(b)" type="button" class="btn-secondary btn-sm" @click="move(b.id, nextStatus(b.status)!)">→ {{ BUG_STATUS[nextStatus(b.status)!].label }}</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <UiEmpty v-else title="Tidak ada item di filter ini" text="Ubah filter jenis, keparahan, atau proyek untuk melihat item lain." />
+  </section>
+
+  <div v-else class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 items-start">
     <section
       v-for="col in columns"
       :key="col.key"
@@ -141,7 +186,7 @@ const showBug = ref(route.query.lapor === '1')
         </div>
         <div v-if="b.module || (b.blocksTerm && b.status !== 'selesai')" class="flex flex-wrap gap-1.5 min-w-0">
           <span v-if="b.module" class="badge bg-soft-2 text-ink-2 !py-0.5 max-w-full" :title="b.module"><span class="truncate">{{ b.module }}</span></span>
-          <span v-if="b.blocksTerm && b.status !== 'selesai'" class="badge bg-warning-50 text-warning-700 !py-0.5">menghambat termin</span>
+          <span v-if="b.blocksTerm && b.status !== 'selesai'" class="badge bg-warning-50 text-warning-700 !py-0.5">hambat termin</span>
         </div>
         <div class="flex items-center justify-between gap-2">
           <span class="text-xs text-muted">{{ dateId(b.createdAt) }}<template v-if="b.targetDate"> · target {{ dateId(b.targetDate) }}</template></span>
@@ -150,7 +195,7 @@ const showBug = ref(route.query.lapor === '1')
         <div class="flex items-center justify-between gap-2 border-t border-line-3 pt-2">
           <span class="text-[11px] text-muted truncate">Dilaporkan oleh {{ b.reporter ?? '—' }}</span>
           <button
-            v-if="nextStatus(b.status) && (isAdmin || (can('bug', 'ditugaskan') && b.assigneeId === user?.id && nextStatus(b.status) !== 'selesai'))"
+            v-if="canAdvance(b)"
             type="button"
             class="text-xs font-semibold text-brand-700 whitespace-nowrap min-h-8"
             @click="move(b.id, nextStatus(b.status)!)"

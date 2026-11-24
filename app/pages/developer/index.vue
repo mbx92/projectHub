@@ -2,17 +2,33 @@
 definePageMeta({ middleware: 'role', roles: ['developer'] })
 useHead({ title: 'Dashboard Developer — OCN Project Hub' })
 const { user, can } = useAuth()
-const { data, pending } = await useFetch('/api/developer/dashboard')
+const toast = useToast()
+const { data, pending, refresh } = await useFetch('/api/developer/dashboard')
 const k = computed(() => data.value?.kpis)
 const firstName = computed(() => user.value?.name.split(' ')[0] ?? '')
 const stats = computed(() => !k.value ? [] : [
-  { label: 'Tugas aktif', value: k.value.assigned, sub: `${k.value.open} open · ${k.value.inProgress} dikerjakan`, color: undefined as string | undefined },
-  { label: 'Menunggu review', value: k.value.review, sub: 'Dicek oleh pengelola', color: k.value.review ? '#B54708' : undefined },
-  { label: 'Kritis', value: k.value.critical, sub: 'Bug keparahan kritis', color: k.value.critical ? '#B42318' : undefined },
-  { label: 'Lewat target', value: k.value.overdue, sub: 'Melewati target selesai', color: k.value.overdue ? '#B42318' : undefined },
-  { label: 'Selesai 30 hari', value: k.value.doneLast30, sub: 'Bug yang Anda tuntaskan', color: k.value.doneLast30 ? '#067647' : undefined },
+  { label: 'Tugas aktif', value: k.value.assigned, sub: `${k.value.open} open · ${k.value.inProgress} dikerjakan · ${k.value.review} review`, color: undefined as string | undefined },
+  { label: 'Lewat target', value: k.value.overdue, sub: 'Perlu segera ditangani', color: k.value.overdue ? '#B42318' : undefined },
+  { label: 'Menghambat termin', value: k.value.blocking, sub: 'Prioritaskan lebih dulu', color: k.value.blocking ? '#B54708' : undefined },
+  { label: 'Selesai 30 hari', value: k.value.doneLast30, sub: k.value.avgDoneDays === null ? 'Belum ada yang selesai' : `Rata-rata ${k.value.avgDoneDays} hari`, color: k.value.doneLast30 ? '#067647' : undefined },
 ])
 const topTasks = computed(() => (data.value?.tasks ?? []).slice(0, 6))
+
+/** Developer hanya sampai Review; Selesai ditandai pengelola bug. */
+const nextStatus = (s: BugStatus): BugStatus | null => ({ open: 'dikerjakan', dikerjakan: 'review', review: null, selesai: null } as const)[s]
+const busy = ref<number | null>(null)
+async function advance(id: number, code: string, to: BugStatus) {
+  busy.value = id
+  try {
+    await $fetch<unknown>(`/api/bugs/${id}`, { method: 'PATCH', body: { status: to } })
+    toast.success(`${code} → ${BUG_STATUS[to].label}`)
+    await refresh()
+  } catch (e) {
+    toast.error(errorMessage(e))
+  } finally {
+    busy.value = null
+  }
+}
 </script>
 
 <template>
@@ -33,9 +49,16 @@ const topTasks = computed(() => (data.value?.tasks ?? []).slice(0, 6))
         <span class="text-xs font-mono text-muted">{{ b.code }}</span>
         <NuxtLink :to="`/bugs/${b.id}`" class="text-sm font-semibold !text-ink hover:!text-brand-700 flex-1 min-w-48">{{ b.title }}</NuxtLink>
         <UiBadge :tone="BUG_SEVERITY[b.severity]" />
+        <UiBadge :tone="BUG_STATUS[b.status]" />
         <span v-if="b.overdue" class="badge bg-danger-50 text-danger-700">lewat target {{ dateId(b.targetDate) }}</span>
         <span v-if="b.blocksTerm" class="badge bg-warning-50 text-warning-700">menghambat termin</span>
         <span class="text-xs text-info-700">{{ b.projectName }}</span>
+        <button
+          v-if="nextStatus(b.status) && can('bug', 'ditugaskan')"
+          type="button" class="btn-secondary btn-sm" :disabled="busy === b.id"
+          @click="advance(b.id, b.code, nextStatus(b.status)!)"
+        >{{ BUG_ADVANCE_LABEL[b.status] }}</button>
+        <span v-else-if="b.status === 'review'" class="text-xs text-muted">Menunggu review</span>
       </li>
     </ul>
   </section>
@@ -55,6 +78,12 @@ const topTasks = computed(() => (data.value?.tasks ?? []).slice(0, 6))
           </div>
           <UiBadge :tone="BUG_SEVERITY[b.severity]" />
           <UiBadge :tone="BUG_STATUS[b.status]" />
+          <button
+            v-if="nextStatus(b.status) && can('bug', 'ditugaskan')"
+            type="button" class="btn-secondary btn-sm" :disabled="busy === b.id"
+            @click="advance(b.id, b.code, nextStatus(b.status)!)"
+          >{{ BUG_ADVANCE_LABEL[b.status] }}</button>
+          <span v-else-if="b.status === 'review'" class="text-xs text-muted">Menunggu review</span>
         </li>
       </ul>
       <UiEmpty v-else title="Tidak ada tugas aktif" text="Bug yang ditugaskan kepada Anda akan muncul di sini." />

@@ -34,6 +34,12 @@ export default defineEventHandler(async (event) => {
     .filter(b => b.severity === 'kritis' || overdue(b) || b.blocksTerm)
     .map(b => ({ ...b, overdue: overdue(b) }))
 
+  const doneRecent = myBugs.filter(b => b.status === 'selesai' && b.resolvedAt && daysBetween(toISODate(new Date(b.resolvedAt)), today) <= 30)
+  // Lama pengerjaan: dari bug dibuat sampai selesai, rata-rata dalam hari.
+  const avgDoneDays = doneRecent.length
+    ? Math.round(doneRecent.reduce((s, b) => s + Math.max(0, daysBetween(toISODate(new Date(b.createdAt)), toISODate(new Date(b.resolvedAt!)))), 0) / doneRecent.length)
+    : null
+
   const milestones = projectIds.length
     ? await db.select({ projectId: schema.milestones.projectId, name: schema.milestones.name, targetDate: schema.milestones.targetDate })
       .from(schema.milestones)
@@ -49,7 +55,9 @@ export default defineEventHandler(async (event) => {
       review: open.filter(b => b.status === 'review').length,
       critical: open.filter(b => b.severity === 'kritis').length,
       overdue: open.filter(overdue).length,
-      doneLast30: myBugs.filter(b => b.status === 'selesai' && b.resolvedAt && daysBetween(toISODate(new Date(b.resolvedAt)), today) <= 30).length,
+      blocking: open.filter(b => b.blocksTerm).length,
+      doneLast30: doneRecent.length,
+      avgDoneDays,
     },
     tasks: open
       .sort((a, b) => BUG_SEVERITY[a.severity].order - BUG_SEVERITY[b.severity].order || (a.targetDate ?? '9999').localeCompare(b.targetDate ?? '9999'))
