@@ -259,6 +259,15 @@ class _Users extends StatelessWidget {
 
   Future<void> _setStatus(BuildContext context, Map<String, dynamic> u, String st) => guard(context, () async { await Api.i.patch('/api/users/${u['id']}', {'status': st}); onChanged(); }, ok: st == 'aktif' ? 'Pengguna diaktifkan.' : 'Pengguna dinonaktifkan.');
 
+  static Widget _lvl(String v, {bool scope = false}) {
+    const labels = {'tidak': 'Tidak ada', 'lihat': 'Lihat', 'kelola': 'Kelola', 'ringkasan': 'Ringkasan', 'ditugaskan': 'Yang ditugaskan', 'sendiri': 'Data sendiri', 'semua': 'Semua proyek', 'didanai': 'Yang didanai'};
+    final label = labels[v] ?? v;
+    if (scope) return Pill(label, fg: C.purple, bg: const Color(0xFFEDE9FE));
+    if (v == 'tidak') return Pill(label);
+    if (v == 'kelola') return Pill(label, fg: const Color(0xFF047857), bg: C.greenSoft);
+    return Pill(label, fg: C.blue, bg: C.blueSoft);
+  }
+
   @override
   Widget build(BuildContext context) {
     final matrix = asMap(access['matrix']);
@@ -285,12 +294,14 @@ class _Users extends StatelessWidget {
         const H('Hak Akses per Peran'),
         const Text('Admin selalu penuh. Perubahan matriks dilakukan dari aplikasi web.', style: TextStyle(color: C.mute, fontSize: 12)),
         const SizedBox(height: 8),
-        SingleChildScrollView(scrollDirection: Axis.horizontal, child: DataTable(
-          headingTextStyle: const TextStyle(color: C.mute, fontWeight: FontWeight.w600, fontSize: 12),
-          columns: const [DataColumn(label: Text('Modul')), DataColumn(label: Text('Investor')), DataColumn(label: Text('Developer'))],
-          rows: [for (final m in modules) DataRow(cells: [DataCell(Text(m.$2)), DataCell(Text('${asMap(matrix['investor'])[m.$1] ?? '—'}')), DataCell(Text('${asMap(matrix['developer'])[m.$1] ?? '—'}'))]),
-            DataRow(cells: [const DataCell(Text('Lingkup proyek')), DataCell(Text('${asMap(matrix['investor'])['scope'] ?? '—'}')), DataCell(Text('${asMap(matrix['developer'])['scope'] ?? '—'}'))])],
-        )),
+        AppTable(
+          head: const ['Modul', 'Investor', 'Developer'],
+          flex: const [3, 2, 2],
+          rows: [
+            for (final m in modules) [m.$2, _lvl('${asMap(matrix['investor'])[m.$1] ?? '—'}'), _lvl('${asMap(matrix['developer'])[m.$1] ?? '—'}')],
+            ['Lingkup proyek', _lvl('${asMap(matrix['investor'])['scope'] ?? '—'}', scope: true), _lvl('${asMap(matrix['developer'])['scope'] ?? '—'}', scope: true)],
+          ],
+        ),
       ])),
     ]);
   }

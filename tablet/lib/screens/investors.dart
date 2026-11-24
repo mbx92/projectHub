@@ -79,11 +79,16 @@ class _InvestorsScreenState extends State<InvestorsScreen> {
                 ),
               ]),
               const SizedBox(height: 12),
-              Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const H('Riwayat Setoran Modal'),
-                if (deps.isEmpty) const Empty('Belum ada setoran.'),
-                for (final x in deps) ListTile(contentPadding: EdgeInsets.zero, dense: true, title: Text('${x['name']}'), subtitle: Text('${tgl(x['date'])} · ${x['purpose'] ?? ''}'), trailing: Text(rp(x['amount']), style: const TextStyle(fontWeight: FontWeight.w700))),
-              ])),
+              const H('Riwayat Setoran Modal'),
+              const SizedBox(height: 8),
+              deps.isEmpty
+                  ? const Panel(child: Empty('Belum ada setoran.'))
+                  : AppTable(
+                      head: const ['Tanggal', 'Investor', 'Peruntukan', 'Nominal'],
+                      flex: const [2, 3, 4, 2],
+                      right: const [3],
+                      rows: [for (final x in deps) [tgl(x['date']), '${x['name']}', '${x['purpose'] ?? '—'}', rp(x['amount'])]],
+                    ),
             ]),
           );
         },

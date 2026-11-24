@@ -29,19 +29,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
             final recv = asList(d['receivables']);
             final bugs = asList(d['bugs']);
             final flows = asList(d['cashflow']);
-            Widget table(List<String> head, List<List<String>> rows, {List<int> right = const []}) => Panel(
-                  padding: const EdgeInsets.all(8),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - 140),
-                      child: DataTable(
-                        headingTextStyle: const TextStyle(color: C.mute, fontWeight: FontWeight.w600, fontSize: 12),
-                        columns: [for (var i = 0; i < head.length; i++) DataColumn(label: Text(head[i]), numeric: right.contains(i))],
-                        rows: [for (final r in rows) DataRow(cells: [for (final x in r) DataCell(Text(x))])],
-                      ),
-                    ),
-                  ),
+            Widget table(List<String> head, List<List<String>> rows, {List<int> right = const []}) => AppTable(
+                  head: head,
+                  right: right,
+                  rows: [for (final r in rows) [for (var i = 0; i < r.length; i++) (head[i] == 'Status' ? Pill.status(r[i]) : r[i])]],
                 );
             Widget body;
             switch (tab) {

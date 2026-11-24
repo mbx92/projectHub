@@ -86,21 +86,24 @@ class DashboardScreen extends StatelessWidget {
                   ]),
                 ),
                 const SizedBox(height: 12),
-                Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const H('Proyek yang Didanai'),
-                  const SizedBox(height: 8),
-                  if (projects.isEmpty) const Empty('Belum ada proyek yang didanai.'),
-                  for (final p in projects) Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Row(children: [
-                    Expanded(flex: 3, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${p['name']}', style: const TextStyle(color: C.green, fontWeight: FontWeight.w600)),
-                      Text('${p['client'] ?? ''}', style: const TextStyle(color: C.mute, fontSize: 12)),
-                    ])),
-                    Expanded(flex: 3, child: Row(children: [Expanded(child: Progress(n(p['progress']))), const SizedBox(width: 8), Text('${n(p['progress']).round()}%')])),
-                    Expanded(flex: 2, child: Text('${rp(p['paid'])}\ndari ${rp(p['contractValue'])}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 12))),
-                    Expanded(flex: 2, child: Text(n(p['openBugs']) > 0 ? '${p['openBugs']} terbuka' : '0', textAlign: TextAlign.center)),
-                    Expanded(flex: 2, child: Align(child: Pill.status('${p['status']}'))),
-                  ])),
-                ])),
+                const H('Proyek yang Didanai'),
+                const SizedBox(height: 8),
+                projects.isEmpty
+                    ? const Panel(child: Empty('Belum ada proyek yang didanai.'))
+                    : AppTable(
+                        head: const ['Proyek', 'Progress', 'Dibayar klien', 'Bug terbuka', 'Status'],
+                        flex: const [3, 3, 3, 2, 2],
+                        right: const [2],
+                        rows: [
+                          for (final p in projects) [
+                            '${p['name']}',
+                            Row(children: [Expanded(child: Progress(n(p['progress']))), const SizedBox(width: 8), Text('${n(p['progress']).round()}%', style: const TextStyle(fontSize: 12))]),
+                            '${rp(p['paid'])} / ${rpShort(n(p['contractValue']))}',
+                            n(p['openBugs']) > 0 ? '${p['openBugs']} terbuka' : '0',
+                            Pill.status('${p['status']}'),
+                          ],
+                        ],
+                      ),
                 if (dists.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
