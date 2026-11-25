@@ -120,7 +120,7 @@ const isImage = (m: string | null) => !!m && m.startsWith('image/')
               <h2 class="section-title">Deskripsi</h2>
               <button v-if="can.editAll && descLines.length > 1" type="button" class="btn-secondary btn-sm" @click="descToChecklist">Jadikan checklist</button>
             </div>
-            <p class="m-0 text-sm leading-relaxed whitespace-pre-line">{{ bug.description }}</p>
+            <p class="m-0 text-sm leading-relaxed whitespace-pre-line break-words">{{ bug.description }}</p>
           </div>
           <div v-if="items.length || canCheck" class="flex flex-col gap-3">
             <div class="flex items-center justify-between gap-3">
@@ -142,13 +142,13 @@ const isImage = (m: string | null) => !!m && m.startsWith('image/')
           </div>
           <div v-if="steps.length" class="flex flex-col gap-2">
             <h2 class="section-title">Langkah reproduksi</h2>
-            <ol class="m-0 pl-5 list-decimal flex flex-col gap-1.5 text-sm"><li v-for="(s, i) in steps" :key="i">{{ s }}</li></ol>
+            <ol class="m-0 pl-6 list-decimal min-w-0 flex flex-col gap-1.5 text-sm"><li v-for="(s, i) in steps" :key="i" class="min-w-0 break-words pl-1"><UiRichText :text="s" /></li></ol>
           </div>
           <div v-if="bug.expected || bug.actual" class="flex flex-col gap-2">
             <h2 class="section-title">Seharusnya vs kenyataan</h2>
             <div class="grid gap-3 sm:grid-cols-2">
-              <div class="rounded-lg bg-brand-soft border border-brand-100 p-3 text-sm"><strong>Seharusnya:</strong> {{ bug.expected || '—' }}</div>
-              <div class="rounded-lg bg-[#FEF3F2] border border-danger-50 p-3 text-sm"><strong>Kenyataan:</strong> {{ bug.actual || '—' }}</div>
+              <div class="min-w-0 rounded-lg bg-brand-soft border border-brand-100 p-3 text-sm flex flex-col gap-1"><strong>Seharusnya</strong><UiRichText :text="bug.expected" /></div>
+              <div class="min-w-0 rounded-lg bg-[#FEF3F2] border border-danger-50 p-3 text-sm flex flex-col gap-1"><strong>Kenyataan</strong><UiRichText :text="bug.actual" /></div>
             </div>
           </div>
           <div class="flex flex-col gap-3">
